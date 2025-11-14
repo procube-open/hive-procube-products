@@ -1,0 +1,314 @@
+{
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+        "plugin": {
+            "type": "string",
+            "enum": [
+                "hive_services"
+            ]
+        },
+        "available_on": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "services": {
+            "type": "object",
+            "additionalProperties": false,
+            "patternProperties": {
+                ".*": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "available_on": {
+                            "type": "array",
+                            "items": {
+                                "type": "string",
+                                "enum": [
+                                    "private",
+                                    "staging",
+                                    "production"
+                                ]
+                            }
+                        },
+                        "command": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "dns": {
+                            "type": "string",
+                            "pattern": "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$"
+                        },
+                        "endpoint_mode": {
+                            "type": "string",
+                            "enum": [
+                                "dnsrr",
+                                "vip"
+                            ]
+                        },
+                        "entrypoint": {
+                            "type": [
+                                "array",
+                                "string"
+                            ],
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "environment": {
+                            "type": [
+                                "object",
+                                "array"
+                            ]
+                        },
+                        "hosts": {
+                            "type": "object"
+                        },
+                        "monitor_error": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "ignore_error": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "initialize_roles": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "labels": {
+                            "type": "object"
+                        },
+                        "logging": {
+                            "type": "object"
+                        },
+                        "mode": {
+                            "type": "string",
+                            "enum": [
+                                "replicated",
+                                "global"
+                            ]
+                        },
+                        "placement": {
+                            "type": "object"
+                        },
+                        "ports": {
+                            "type": "array",
+                            "items": {
+                                "type": [
+                                    "string",
+                                    "object"
+                                ]
+                            }
+                        },
+                        "replicas": {
+                            "type": "number"
+                        },
+                        "restart_config": {
+                            "type": "object"
+                        },
+                        "stop_grace_period": {
+                            "type": "string"
+                        },
+                        "standalone": {
+                            "type": "boolean"
+                        },
+                        "user": {
+                            "type": "string"
+                        },
+                        "working_dir": {
+                            "type": "string"
+                        },
+                        "cap_add": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "cap_drop": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "volumes": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "bind",
+                                            "volume"
+                                        ]
+                                    },
+                                    "source": {
+                                        "type": "string"
+                                    },
+                                    "target": {
+                                        "type": "string"
+                                    },
+                                    "readonly": {
+                                        "type": "boolean"
+                                    },
+                                    "driver": {
+                                        "type": "string"
+                                    },
+                                    "driver_opts": {
+                                        "type": "object"
+                                    },
+                                    "drbd": {
+                                        "type": "object",
+                                        "additionalProperties": false,
+                                        "properties": {
+                                            "fstype": {
+                                                "type": "string"
+                                            },
+                                            "size": {
+                                                "type": "string"
+                                            },
+                                            "diskless": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "available_on": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "nfs": {
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        },
+                        "image": {
+                            "type": [
+                                "string",
+                                "object"
+                            ],
+                            "additionalProperties": false,
+                            "properties": {
+                                "from": {
+                                    "type": "string"
+                                },
+                                "roles": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "standalone": {
+                                    "type": "boolean"
+                                },
+                                "env": {
+                                    "type": "object"
+                                },
+                                "stop_signal": {
+                                    "type": "string"
+                                },
+                                "user": {
+                                    "type": "string"
+                                },
+                                "working_dir": {
+                                    "type": "string"
+                                },
+                                "entrypoint": {
+                                    "type": [
+                                        "array",
+                                        "string"
+                                    ],
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "command": {
+                                    "type": [
+                                        "array",
+                                        "string"
+                                    ],
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "privileged": {
+                                    "type": "boolean"
+                                },
+                                "pull_on": {
+                                    "type": "string",
+                                    "enum": [
+                                        "private",
+                                        "staging",
+                                        "production"
+                                    ]
+                                },
+                                "pull_from": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "backup_scripts": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "container": {
+                                        "type": "string"
+                                    },
+                                    "directory": {
+                                        "type": "string"
+                                    },
+                                    "backup_command": {
+                                        "type": "string"
+                                    },
+                                    "backup_file": {
+                                        "type": "string"
+                                    },
+                                    "restore_command": {
+                                        "type": "string"
+                                    },
+                                    "restore_file": {
+                                        "type": "string"
+                                    },
+                                    "ext": {
+                                        "type": "string"
+                                    },
+                                    "cleanup_days_before": {
+                                        "type": "number"
+                                    },
+                                    "batch_scripts": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

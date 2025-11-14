@@ -1,0 +1,26 @@
+{
+    "name": "hive-builder template container",
+    "dockerFile": "Dockerfile",
+    "overrideCommand": false,
+    "privileged": true,
+    "remoteEnv": {
+        "ANSIBLE_CONFIG": "/var/tmp/hive/ansible.cfg"
+    },
+    "postCreateCommand": "${containerWorkspaceFolder}/setup/scripts/install-collection.sh ${containerWorkspaceFolder}",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "redhat.ansible",
+                "redhat.vscode-yaml",
+                "ms-azuretools.vscode-docker"
+            ],
+            "settings": {
+                "python.defaultInterpreterPath": "/opt/hive/bin/python",
+                "python.terminal.activateEnvInCurrentTerminal": true,
+                "ansible.python.interpreterPath": "/opt/hive/bin/python",
+                "ansible.playbook.arguments": "-e @/var/tmp/hive/vars.yml",
+                "ansible.validation.lint.arguments": "-c .vscode/configs/ansible-lint.yml"
+            }
+        }
+    }
+}

@@ -1,0 +1,17 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "ansible-lint",
+            "type": "shell",
+            "command": "/opt/hive/bin/ansible-lint",
+            "args": [
+                "--fix",
+                "-c",
+                "${workspaceRoot}/.vscode/configs/ansible-lint.yml",
+                "${file}"
+            ],
+            "problemMatcher": []
+        }
+    ]
+}

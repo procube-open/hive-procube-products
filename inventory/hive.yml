@@ -1,0 +1,49 @@
+name: tmpl
+plugin: hive_inventory
+stages:
+  private:
+    provider: vagrant
+    cidr: 192.168.0.0/16
+    internal_cidr: 172.31.252.0/22
+    separate_repository: false
+    number_of_hosts: 1
+    cpus: 2
+    memory_size: 4096
+    repository_memory_size: 4096
+    disk_size: 20
+    repository_disk_size: 20
+    mirrored_disk_size: 20
+  staging:
+    provider: gcp
+    cidr: 192.168.0.0/16
+    internal_cidr: 172.31.252.0/22
+    separate_repository: false
+    number_of_hosts: 3
+    region: asia-northeast2
+    instance_type: n1-standard-2
+    repository_instance_type: n1-standard-2
+    disk_size: 20
+    mirrored_disk_size: 20
+    repository_disk_size: 30
+  production:
+    provider: aws
+    cidr: 192.168.0.0/16
+    internal_cidr: 172.31.252.0/22
+    separate_repository: true
+    number_of_hosts: 4
+    region: ap-northeast-1
+    instance_type: t2.medium
+    repository_instance_type: t2.medium
+    disk_size: 20
+    repository_disk_size: 40
+    mirrored_disk_size: 20
+    subnets:
+    - name: subnet-a
+      cidr: 192.168.0.0/26
+      available_zone: ap-northeast-1b
+    - name: subnet-b
+      cidr: 192.168.0.64/26
+      available_zone: ap-northeast-1c
+    - name: subnet-c
+      cidr: 192.168.0.128/26
+      available_zone: ap-northeast-1d

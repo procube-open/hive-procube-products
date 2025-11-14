@@ -1,0 +1,47 @@
+--- /opt/hive/lib/python3.13/site-packages/github/Repository.py.org	2025-02-03 05:57:09.100210609 +0000
++++ /opt/hive/lib/python3.13/site-packages/github/Repository.py	2025-02-03 06:01:08.852208130 +0000
+@@ -1750,7 +1750,7 @@
+         """
+         assert isinstance(secret_name, str), secret_name
+         assert isinstance(unencrypted_value, str), unencrypted_value
+-        assert secret_type in ["actions", "dependabot"], "secret_type should be actions or dependabot"
++        assert secret_type in ["actions", "dependabot", "codespaces"], "secret_type should be actions, dependabot or codespaces"
+ 
+         secret_name = urllib.parse.quote(secret_name)
+         public_key = self.get_public_key(secret_type=secret_type)
+@@ -1779,7 +1779,7 @@
+         """
+         Gets all repository secrets :param secret_type: string options actions or dependabot.
+         """
+-        assert secret_type in ["actions", "dependabot"], "secret_type should be actions or dependabot"
++        assert secret_type in ["actions", "dependabot", "codespaces"], "secret_type should be actions, dependabot or codespaces"
+ 
+         return PaginatedList(
+             github.Secret.Secret,
+@@ -1798,7 +1798,7 @@
+         :param secret_type: string options actions or dependabot
+         """
+         assert isinstance(secret_name, str), secret_name
+-        assert secret_type in ["actions", "dependabot"], "secret_type should be actions or dependabot"
++        assert secret_type in ["actions", "dependabot", "codespaces"], "secret_type should be actions, dependabot or codespaces"
+ 
+         secret_name = urllib.parse.quote(secret_name)
+         return github.Secret.Secret(
+@@ -1866,7 +1866,7 @@
+         :rtype: bool
+         """
+         assert isinstance(secret_name, str), secret_name
+-        assert secret_type in ["actions", "dependabot"], "secret_type should be actions or dependabot"
++        assert secret_type in ["actions", "dependabot", "codespaces"], "secret_type should be actions, dependabot or codespaces"
+         secret_name = urllib.parse.quote(secret_name)
+         status, headers, data = self._requester.requestJson("DELETE", f"{self.url}/{secret_type}/secrets/{secret_name}")
+         return status == 204
+@@ -3151,7 +3151,7 @@
+         :param secret_type: string options actions or dependabot
+         :rtype: :class:`github.PublicKey.PublicKey`
+         """
+-        assert secret_type in ["actions", "dependabot"], "secret_type should be actions or dependabot"
++        assert secret_type in ["actions", "dependabot", "codespaces"], "secret_type should be actions, dependabot or codespaces"
+ 
+         headers, data = self._requester.requestJsonAndCheck("GET", f"{self.url}/{secret_type}/secrets/public-key")
+         return github.PublicKey.PublicKey(self._requester, headers, data, completed=True)

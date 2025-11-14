@@ -1,0 +1,6 @@
+---
+- name: "Restart Nginx"
+  ansible.builtin.command:
+    cmd: "nginx -s reload"
+  listen: "restart nginx"
+  changed_when: false

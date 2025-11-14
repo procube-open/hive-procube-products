@@ -1,0 +1,3 @@
+---
+service_name: redmine
+service_port: 3000

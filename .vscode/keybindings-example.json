@@ -1,0 +1,8 @@
+[
+    {
+        "key": "shift+alt+f",
+        "command": "workbench.action.tasks.runTask",
+        "args": "ansible-lint",
+        "when": "editorLangId == 'ansible'"
+    }
+]

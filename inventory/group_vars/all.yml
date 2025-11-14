@@ -1,0 +1,8 @@
+---
+# Secrets
+# secrets: "{{ lookup('file', inventory_dir | dirname + '/secrets.yml') | from_yaml | default({}) }}"
+
+# DRBD
+
+hive_kernel_version: 5.14.0-570.28.1.el9_6.x86_64
+hive_drbd_download_url: https://github.com/procube-open/drbd9-rpm/releases/download/Latests/drbd-9.2.13-v9.29.0-5.14.0-570.28.1.el9_6.x86_64.tar.gz
