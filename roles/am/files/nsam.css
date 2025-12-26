@@ -1,0 +1,86 @@
+body { 
+  margin: 0;
+  padding: 0;
+  background-color: #858888;
+  height: 100vh;
+}
+#login .container #login-row #login-column #login-box {
+  margin-top: 10px;
+  max-width: 600px;
+  border: 1px solid #9C9C9C;
+  background-color: #EAEAEA;
+}
+#login .container #login-row #login-column #login-box #login-form {
+  padding: 20px;
+}
+#login .container #login-row #login-column #login-box #login-form #register-link {
+  margin-top: -85px;
+}
+
+div.dropdown {
+  padding-top: 5px;
+  padding-bottom: 15px;
+}
+
+@media screen and (min-width: 750px) {
+  .otpSetting {
+    position: absolute;
+    left: 48%;
+    margin: 0 0 0 -300px;
+    width:750px;
+    height:850px;
+  }
+  .otpForm {
+    position: absolute;
+    left: 50%;
+    margin: 10px 0 0 -150px;
+  }
+}
+@media screen and (max-width: 750px) {
+  .otpSetting {
+    height: 100%;
+  }
+  #totp-gauth-registration-title {
+    font-size: 20px;
+  }
+  .otpForm {
+    height: 100%;
+  }
+  strong {
+    word-wrap: break-word;
+  }
+}
+.otpSetting {
+  font-size: 15px;
+  color: #000;
+}
+
+#deviceCheck {
+  left:4px;
+  position: relative;
+}
+#deviceRadio {
+  width: 10%;
+  display:inline-block;
+}
+#radioLabel {
+  display: block;
+}
+.main-logo-area {
+  width: 100%;
+  height: 87px;
+  margin-top: 15px;
+}
+.main-logo {
+  display: inline-block;
+  width: 100%;
+  height: 86px;
+  background: no-repeat;
+  background-image: url(/ns_webbox/signature01.png);
+  background-position: center;
+}
+@media screen and (max-width: 750px) {
+  .main-logo {
+    background-size: 350px;
+  }
+}

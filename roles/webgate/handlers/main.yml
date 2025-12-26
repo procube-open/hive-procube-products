@@ -1,0 +1,7 @@
+---
+# - name: restart iptables for following initialize process
+#   service: name="iptables" state="restarted"
+#   listen: webgate is installed
+# - name: start services
+#   service: name="webgate.target" state="started"
+#   listen: webgate is installed

@@ -1,6 +1,5 @@
 ---
 - name: "set timezone"
   timezone:
-      name: "{{ hostvars[groups['servers'] | intersect(groups[hive_stage]) | first].hive_timezone }}"
+      name: "{{ hive_timezone }}"
   when: hive_timezone is defined
-

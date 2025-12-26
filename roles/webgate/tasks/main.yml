@@ -1,70 +1,29 @@
 ---
 # This role installs WebGate and configures it. for docker container
-- name: delete GPG key
-  rpm_key:
-    state: absent
-    key: /etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux
-- name: import GPG key
-  rpm_key:
-    state: present
-    key: https://repo.almalinux.org/almalinux/RPM-GPG-KEY-AlmaLinux
-- name: Gathering Facts
-  setup:
-- name: disable nodejs nginx module of dnf
+- name: disable nginx module of dnf
   shell: |
-    dnf module disable -y nodejs nginx
-  when: ansible_distribution == 'AlmaLinux'
+    dnf module disable -y nginx
+- name: enable nodejs nginx module of dnf
+  shell: |
+    dnf module enable -y nodejs:22
 - name: install NetSoarer WebGate 2
-  yum:
-    name: NetSoarer-WebGate
-- name: install iproute for ss command
-  yum:
-    name: iproute
-  when: ansible_distribution == 'AlmaLinux'
+  dnf:
+    name:
+    - NetSoarer-WebGate
+    - bind-utils
+    - iproute
+    - openssh-clients
+    enablerepo: crb
 # - name: patch to set consistentAddress false
 #   lineinfile:
 #     dest: /etc/consul-template.d/shibboleth2.xml.tmpl
 #     regexp: '^( *checkAddress="false" )(consistentAddress="false" )?(.*)$'
 #     line: '\1consistentAddress="false" \3'
 #     backrefs: yes
-# CAUTION: 自分の hive_default_network のアドレスを首都kすする際に getent hosts を
-# 使うと ::1 が返ってくるので注意が必要です。
-# https://github.com/systemd/systemd/issues/23152
-- name: install script to setup peer nodes for consul 
+- name: put override consul.service
   copy:
-    src: setup-peers.py
-    dest: /usr/bin/setup-peers.py
-    mode: "0777"
-- name: set override services
-  copy:
-    src: "{{ item }}"
+    src: consul.service.d
     dest: /usr/lib/systemd/system/
-  loop:
-  - consul.service.d
-  - consul2file.service.d
-  - shibbolethConfigure.service.d
-  - shibd.service.d
-  # - webgate.target.d
-- name: set override services - entier unit
-  copy:
-    src: "{{ item }}"
-    dest: /etc/systemd/system/
-  loop:
-  - consul2fileConfigure.service
-- name: install waiting shell script
-  copy:
-    src: wait-raft.py
-    dest: /usr/bin/
-    mode: "0755"
-- name: put override consul.service to add -advertise option
-  copy:
-    src: advertise.conf
-    dest: /usr/lib/systemd/system/consul.service.d
-  when: consul_network_if is not defined
-- name: put shibboleth config template file for memcached
-  copy:
-    src: shibboleth2.xml.tmpl
-    dest: /etc/consul-template.d
 - name: put template file to get logical backup of consul kv
   copy:
     src: exportKvs.tmpl
@@ -79,52 +38,67 @@
   - lvsConfigure
   - dsr
   - dsrConfigure
-- name: setup acme get/renew certificate tool
-  include_tasks:
-    file: acme.yml
-  vars:
+- name: setup python3
+  yum:
+    name:
+    - python3
+    - python3-setuptools
+- set_fact:
     ansible_python_interpreter: "/bin/python3"
-- name: modify shibd log level to debug
+- name: make virtual env for provisioning tools
+  pip:
+    name:
+    - python-consul
+    virtualenv: /root/consul
+    virtualenv_command: /bin/python3 -m venv
+- name: active virtualenv on .bashrc
   lineinfile:
-    regexp: "log4j\\.rootCategory=[A-Z]+, shibd_log, warn_log"
-    line: log4j.rootCategory={{ shibboleth_log_level }}, shibd_log, warn_log
-    path: /etc/shibboleth/shibd.logger
-  when: shibboleth_log_level is defined
-- name: modify retry interval of reload nginx
-  lineinfile:
-    regexp: "MAX_RETRY=[0-9]*"
-    line: "MAX_RETRY=60"
-    path: /usr/bin/reloadNginx
-- name: modify restartShibd
-  copy:
-    src: restartShibd
-    dest: /usr/bin/restartShibd
-    mode: "0755"
-- name: modify shibfcgi log level to debug
-  lineinfile:
-    regexp: "{{ item.regexp }}"
-    line: "{{ item.line }}"
-    path: /etc/shibboleth/native.logger
-  when: shibboleth_log_level is defined
-  loop:
-  - regexp: "log4j\\.rootCategory=[A-Z]+, native_log"
-    line: log4j.rootCategory={{ shibboleth_log_level }}, native_log
-  - regexp: "log4j\\.category\\.XMLTooling\\.XMLObject=[A-Z]+"
-    line: "log4j\\.category\\.XMLTooling\\.XMLObject={{ shibboleth_log_level }}"
-  - regexp: "log4j\\.category\\.XMLTooling\\.KeyInfoResolver=[A-Z]+"
-    line: "log4j\\.category\\.XMLTooling\\.KeyInfoResolver={{ shibboleth_log_level }}"
-  - regexp: "log4j\\.category\\.Shibboleth\\.IPRange=[A-Z]+"
-    line: "log4j\\.category\\.Shibboleth\\.IPRange={{ shibboleth_log_level }}"
-  - regexp: "log4j\\.category\\.Shibboleth\\.PropertySet=[A-Z]+"
-    line: "log4j\\.category\\.Shibboleth\\.PropertySet={{ shibboleth_log_level }}"
-- name: put custom html for shibboleth sp
-  copy:
-    src: "{{ item }}"
-    dest: /etc/shibboleth
-  loop:
-  - sessionError.html
-- name: put restore script for consul kv
-  copy:
-    src: restore-consul-kv.sh
-    dest: /usr/bin
-    mode: "0755"
+    path: /root/.bashrc
+    line: source /root/consul/bin/activate
+- name: adding user nginx to group apache
+  user:
+    name: nginx
+    groups: apache
+    append: yes
+- name: start and enable services
+  service: name="{{item}}" state=started enabled=yes
+  with_items:
+    - renewCerts.timer
+#- name: Create/Overwrite symbolic link for certbot
+#  file:
+#    src: /root/consul/bin/certbot
+#    dest: /bin/certbot
+#    owner: root
+#    group: root
+#    state: link
+- name: create ssh dir
+  file:
+    dest: "/root/.ssh/"
+    state: directory
+    mode: 0700
+    owner: root
+    group: root
+#- name: put ssh key
+#  copy:
+#    content: "{{ webgate_ssh_private }}"
+#   dest: /root/.ssh/id_rsa
+#    mode: "0600"
+#    owner: root
+#    group: root
+#- name: put ssh config
+#  copy:
+#    src: "ssh_config"
+#    dest: /root/.ssh/config
+#    mode: "0600"
+#    owner: root
+#    group: root
+#- name: cert updater
+#  copy:
+#    src: "{{ item }}"
+#    dest: /etc/letsencrypt/renewal-hooks/deploy/
+#    mode: "0755"
+#    owner: root
+#    group: root
+#  with_items:
+#    - transfer2ldap
+#    - transfer2radiusguest

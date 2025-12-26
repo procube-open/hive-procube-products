@@ -1,0 +1,89 @@
+- name: Generate an OpenSSL private key with the default values (4096 bits, RSA)
+  openssl_privatekey:
+    path: "/var/acme/data/{{ acme_email }}_account.key"
+  run_once: true
+- name: make sure letsencrypt account
+  acme_account:
+    account_key_src: "/var/acme/data/{{ acme_email }}_account.key"
+    state: present
+    terms_agreed: yes
+    contact:
+    - "mailto:{{ acme_email }}"
+    acme_version: 2
+    acme_directory: "{{ acme_directory }}"
+  run_once: true
+- name: Generate an OpenSSL private key with the default values (4096 bits, RSA)
+  openssl_privatekey:
+    path: "/var/acme/data/{{ fqdn }}_server.key"
+  loop: "{{ fqdn_list }}"
+  loop_control:
+    loop_var: fqdn
+- name: Generate an OpenSSL Certificate Signing Request
+  community.crypto.openssl_csr:
+    path: "/var/acme/data/{{ fqdn }}.csr"
+    privatekey_path: "/var/acme/data/{{ fqdn }}_server.key"
+    country_name: "{{ acme_country_name | default(omit)}}"
+    organization_name: "{{ acme_organization_name | default(omit)}}"
+    organizational_unit_name: "{{ acme_organizational_unit_name | default(omit)}}"
+    subject_alt_name: "DNS:{{ fqdn }}"
+    common_name: "{{ fqdn }}"
+  loop: "{{ fqdn_list }}"
+  loop_control:
+    loop_var: fqdn
+#- name: Generate OpenSSL certificate
+#  openssl_certificate:
+#    path: "/var/acme/data/{{ fqdn }}.crt"
+#    privatekey_path: "/var/acme/data/{{ fqdn }}_server.key"
+#    csr_path: "/var/acme/data/{{ fqdn }}.csr"
+#    provider: selfsigned
+- name: Create a challenge for fqdn using a account key file.
+  acme_certificate:
+    account_key_src: "/var/acme/data/{{ acme_email }}_account.key"
+    account_email: "{{ acme_email }}"
+    src: "/var/acme/data/{{ fqdn }}.csr"
+    cert: "/var/acme/data/{{ fqdn }}.crt"
+    challenge: dns-01
+    # Renew if the certificate is at least 31 days old
+    remaining_days: 31
+    acme_version: 2
+    acme_directory: "{{ acme_directory }}"
+  register: letsencrypt_challenge
+  loop: "{{ fqdn_list }}"
+  loop_control:
+    loop_var: fqdn
+- debug: var=letsencrypt_challenge
+- name: Register challenge data to powerdns
+  powerdns_record:
+    zone: "{{ fqdn   | regex_replace('^[^.]*\\.(.*)$', '\\1') }}"
+    type: TXT
+    name: "{{ ( letsencrypt_challenge.results | selectattr('fqdn', 'eq', fqdn) | first ).challenge_data[fqdn]['dns-01'].record }}"
+    ttl: 60
+    pdns_api_key: "{{ hostvars['powerdns'].db_password }}"
+    pdns_host: powerdns
+    content: "{{ ( letsencrypt_challenge.results | selectattr('fqdn', 'eq', fqdn) | first ).challenge_data[fqdn]['dns-01'].resource_value | regex_replace('^(.*)$', '\"\\1\"') }}"
+  when: ( letsencrypt_challenge.results | selectattr('fqdn', 'eq', fqdn) | first ) is changed
+  register: register_challenge_result
+  until: not register_challenge_result.failed
+  retries: 3
+  loop: "{{ fqdn_list }}"
+  loop_control:
+    loop_var: fqdn
+- name: Let the challenge be validated and retrieve the cert and intermediate certificate
+  acme_certificate:
+    account_key_src: "/var/acme/data/{{ acme_email }}_account.key"
+    account_email: "{{ acme_email }}"
+    src: "/var/acme/data/{{ fqdn }}.csr"
+    cert: "/var/acme/data/{{ fqdn }}.crt"
+    fullchain: "/var/acme/data/{{ fqdn }}-fullchain.crt"
+    chain: "/var/acme/data/{{ fqdn }}-intermediate.crt"
+    challenge: dns-01
+    data: "{{ ( letsencrypt_challenge.results | selectattr('fqdn', 'eq', fqdn) | first ) }}"
+    # Renew if the certificate is at least 31 days old
+    remaining_days: 31
+    acme_version: 2
+    acme_directory: "{{ acme_directory }}"
+  when: ( letsencrypt_challenge.results | selectattr('fqdn', 'eq', fqdn) | first ) is changed
+  loop: "{{ fqdn_list }}"
+  loop_control:
+    loop_var: fqdn
+

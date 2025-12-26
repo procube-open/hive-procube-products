@@ -1,0 +1,5 @@
+---
+- name: copy db init SQL file
+  copy:
+    src: createLoginRecordingTable.psql.sql
+    dest: /docker-entrypoint-initdb.d/

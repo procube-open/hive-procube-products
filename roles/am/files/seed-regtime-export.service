@@ -1,0 +1,8 @@
+[Unit]
+Description=AM2 Database management
+
+[Service]
+Type=oneshot
+WorkingDirectory=/root
+ExecStart=/root/bin/transferUsersSeeds.sh
+ExecStartPost=/root/bin/cleanupDeviceMgmt.sh

@@ -1,0 +1,54 @@
+##
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>#springMessageText("idp.title", "NetSoarer AccessManager - Login Page")</title>
+
+  <link href="/ns_webbox/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="/ns_webbox/fontawesome/css/all.css" rel="stylesheet" />
+  <link href="/idp_userFiles/nsam.css" rel="stylesheet" />
+
+  <script src="/ns_webbox/jquery.min.js"></script>
+  <script src="/ns_webbox/bootstrap/js/bootstrap.bundle.js"></script>
+
+  <style type="text/css">
+@media (min-width: 768px) {
+  .container {
+    max-width: 700px;
+  }
+}
+
+body {
+  background: #fff;
+  background-color: #fff;
+}
+
+  </style>
+
+</head>
+<body>
+  <div class="container">
+    <div class="row">
+      <p class="lead">ワンタイムパスワード認証を設定してください</p>
+      <p >初めてのログインでは、ワンタイムパスワード認証の設定が必要です。<br /><br />ボタンを押して設定画面に進んでください。</p>
+    </div>
+
+    <form method="POST" id="gotoTotpForm" action="$flowExecutionUrl&_eventId=UseTotpAuthenticator">
+      <button type="submit" name="" formaction="$flowExecutionUrl&_eventId=UseTotpAuthenticator"
+          class="btn btn-primary">ワンタイムパスワード設定へ &raquo;</button>
+    </form>
+  </div>
+
+<script type="text/javascript">
+$(document).ready(function(){
+   $("form#gotoTotpForm").submit();
+});
+</script>
+
+</body>
+</html>
+

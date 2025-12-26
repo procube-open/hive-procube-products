@@ -1,7 +1,0 @@
----
-plugin: idm_inventory
-interface: userEditorInterface
-host_name_property: uid
-class_name: user
-groups:
-- name: users

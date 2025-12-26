@@ -1,14 +1,12 @@
 ---
-- name: wait a minute for tomcat7 is started
-  pause:
-    seconds: 35
 - name: initialize databases
-  shell: JAVA_HOME=/usr/lib/jvm/adoptopenjdk-11-hotspot/ TERM=xterm idm2ctl init
+  shell: idm3ctl init
   register: init
   changed_when: init.rc == 0
   failed_when: init.rc != 0 and init.rc != 3
 - name: setup instances
   idm:
+    host: "idm3-bindbroker"
     interface: "{{ item.1.name }}"
     key_property: "{{ item.1.key_property }}"
     filter: "{{ item.1.filter | default(omit)}}"
@@ -20,18 +18,5 @@
   until: not loaded_data.failed
   retries: 3
   delay: 3
-  vars:
-    ansible_python_interpreter: /root/prov/bin/python
-- name: upload infoscoop settings
-  mysql_table:
-    db: iscoop
-    table: "{{ item.name }}"
-    key_columns: "{{ item.key_columns }}"
-    values: "{{ is_tables_data[item.name] }}"
-    filter: "{{ item.filter  | default(omit) }}"
-  loop: "{{ restore_sequence_mariadb }}"
-  loop_control:
-    label: "{{item.name}}"
-  tags: iscoop
   vars:
     ansible_python_interpreter: /root/prov/bin/python

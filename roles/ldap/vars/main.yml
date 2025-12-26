@@ -1,2 +1,0 @@
----
-db_password: "{{lookup('password', hive_context_dir + '/registry_password length=15 chars=ascii_letters,digits')}}1A"

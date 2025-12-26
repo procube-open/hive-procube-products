@@ -11,16 +11,6 @@
   loop: "{{ md_ifs }}"
   loop_control:
     loop_var: md_if
-- name: download iscoop database
-  mysql_table_facts:
-    db: iscoop
-    table: "{{ item.name }}"
-    html_fields: "{{ item.html_fields | default(omit) }}"
-    filter: "{{ item.filter  | default(omit) }}"
-  vars:
-    ansible_python_interpreter: /root/prov/bin/python
-  loop: "{{restore_sequence_mariadb}}"
-  register: mariadb_dataset
 - name: transform value to jinja2 expression
   idmdownload_format:
     mongodb_data: "{{ mongo_dataset.results }}"

@@ -1,41 +1,18 @@
 ---
-saml_certs_dir: "{{ hive_context_dir }}/saml-certs"
-CN: "saml"
-saml_cert: "{{ lookup('file', saml_certs_dir + '/' + CN + '_cert.pem') }}"
-saml_key: "{{ lookup('file', saml_certs_dir + '/' + CN + '_key.pem') }}"
-saml_cert_stripped: "{{ saml_cert | replace('-----BEGIN CERTIFICATE-----\n','') | replace('-----END CERTIFICATE-----','') }}"
-
-sp_descriptor:
-  monitor:
-    display_name_ja: 稼働監視システム
-    display_name: Monitoring System
-    description: hiveサイト内のサーバ、サービスの稼働を監視するシステム
-  auth:
-    display_name_ja: 認証データ管理サービス
-    display_name: Authentication Data Manager
-    description: 端末やOTPシードなどの認証データを管理するための Web UI サービス
-  idm:
-    display_name_ja: ID管理サービス
-    display_name: ID Manager
-    description: 利用者のIDを管理するための Web UI サービス
-  pdnsadmin:
-    display_name_ja: DNS管理サービス
-    display_name: DNS Manager
-    description: DNS を管理する Web UI サービス
+dn_suffix: "dc=netsoarer,dc=net"
 
 am_kv_metadataFile: >-
   {%- set output_services = [] -%}
-  {%- set published_names = ['monitor'] -%}
-  {%- for service in groups['services'] | intersect(groups[hive_stage]) -%}
-    {%- if hostvars[service].hive_labels is defined -%}
-      {%- set labels = hostvars[service].hive_labels -%}
-      {%- if (labels.webgate.authentication | default("none")) == "saml"  or
-            (labels.webgate.proxies | default([]) | selectattr('authentication', 'defined') | selectattr('authentication', 'eq', 'saml') | list | length) > 0 -%}
-        {%- set _ = published_names.append(labels.published_name | default(service)) -%}
-      {%- endif -%}
+  {%- set published_names = [] -%}
+  {%- for host in groups['services'] | intersect(groups[hive_stage]) |
+          map('extract', hostvars, 'hive_labels') | select('defined') -%}
+    {%- if (host.webgate.authentication | default('none')) == 'saml' or 
+           (host.webgate.proxies | default([]) | selectattr('authentication', 'defined') | selectattr('authentication', 'eq', 'saml') | list | length) > 0 -%}
+      {%- set _ = published_names.append(host.published_name) -%}
     {%- endif -%}
   {%- endfor -%}
-  {%- for published_name in published_names if published_name != "speedtest" -%}
+  {%- set _ = published_names.append('gw') -%}
+  {%- for published_name in published_names -%}
     {%- set fqdn = ( published_name | lower ) + "." + domain -%}
     {%- set metadata = '<md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" ID="' + published_name + '" entityID="https://' + published_name + '.' + domain + '/Shibboleth.sso">\n' +
       '   <md:Extensions xmlns:alg="urn:oasis:names:tc:SAML:metadata:algsupport">\n' +
@@ -60,18 +37,13 @@ am_kv_metadataFile: >-
       '  <md:SPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol urn:oasis:names:tc:SAML:1.1:protocol urn:oasis:names:tc:SAML:1.0:protocol">\n' +
       '    <md:Extensions>\n' +
       '      <init:RequestInitiator xmlns:init="urn:oasis:names:tc:SAML:profiles:SSO:request-init" Binding="urn:oasis:names:tc:SAML:profiles:SSO:request-init" Location="https://' + fqdn + '/Shibboleth.sso/Login"/>\n' +
-      (( '      <mdui:UIInfo xmlns:mdui="urn:oasis:names:tc:SAML:metadata:ui">\n' +
-      '        <mdui:DisplayName xml:lang="ja">' + sp_descriptor[published_name].display_name_ja + '</mdui:DisplayName>\n' +
-      '        <mdui:DisplayName xml:lang="en">' + sp_descriptor[published_name].display_name + '</mdui:DisplayName>\n' +
-      '        <mdui:Description xml:lang="ja">' + sp_descriptor[published_name].description + '</mdui:Description>\n' +
-      '      </mdui:UIInfo>\n' ) if sp_descriptor[published_name] is defined else '') +
       '    </md:Extensions>\n' +
       '    <md:KeyDescriptor>\n' +
       '      <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">\n' +
       '        <ds:KeyName>hive0</ds:KeyName>\n' +
       '        <ds:X509Data>\n' +
       '          <ds:X509SubjectName>CN=hive0</ds:X509SubjectName>\n' +
-      '          <ds:X509Certificate>' + saml_cert_stripped + ' </ds:X509Certificate>\n' +
+      '          <ds:X509Certificate>' + saml_dummy_cert_stripped + ' </ds:X509Certificate>\n' +
       '        </ds:X509Data>\n' +
       '      </ds:KeyInfo>\n' +
       '      <md:EncryptionMethod Algorithm="http://www.w3.org/2009/xmlenc11#aes128-gcm"/>\n' +
@@ -110,14 +82,14 @@ am_kv_metadataFile: >-
   {%- endfor -%}
   {{ output_services }}
 
-am_kv_common:
+am_kv_user_common:
   - key: nsam/idp/samlCertificate
     value:
       app_name: idp
       config_name: samlCertificate
       data1:
-        certificate: "{{ saml_cert }}"
-        privateKey: "{{ saml_key }}"
+        certificate: "{{ credentials.saml_dummy_cert }}"
+        privateKey: "{{ credentials.saml_dummy_key }}"
         isPrimary: true
       data2:
         certificate: ""
@@ -126,203 +98,185 @@ am_kv_common:
   - key: "nsam/idp/baseConfig"
     value:
       app_name: idp
-      attackProtect: true
+      attackProtect: false
       config_name: baseConfig
-      inactivity: "PT{{ inactivity }}H"
-      lifetime: "PT{{ lifetime }}H"
-      failedCountLimitByUserid: "{{ failedCountLimitByUserid }}"
-      failedCountLimitBySrcIPAddr: "{{ failedCountLimitBySrcIPAddr }}"
-      expireSeconds: "{{ expireSeconds }}"
-      htmlLocalStorage: true
-      trackSPSessions: true
-      secondaryServiceIndex: true
-      additionalConfig: |
+      inactivity: PT8H
+      lifetime: PT8H
+      failedCountLimitByUserid: ""
+      failedCountLimitBySrcIPAddr: ""
+      expireSeconds: ""
+      htmlLocalStorage: false
+      trackSPSessions: false
+      secondaryServiceIndex: false
+      additionalConfig: |-
         idp.session.consistentAddress=false
+        idp.authn.LDAP.useStartTLS=false
+        idp.pool.LDAP.minSize=0
         nsam.authn.devicemgmt.beforehandExpiringDuration=PT0S
-        idp.logout.elaboration=true
-  - key: "nsam/idp/attackProtector"
-    value:
-      app_name: idp
-      config_name: attackProtector
-      ipWhiteList: "{{ ipWhiteList | join(',') }}"
-  - key: "nsam/idp/authmethod"
-    value:
-      app_name: idp
-      config_name: authmethod
-      type: "{{ ['Periodic', authMethod] if usePeriodic | default(False) else [authMethod] }}"
-      periodicSessionAttribute:
-      - idmRole
-      - passwdChangedDatetime
-      - accountLock
-      internalAddress: ""
-      DBRecording: true
-      flowType: ""
-      extended: ""
-      mfaAuthmethod: PasswordTotp
-      usePeriodic: "{{ usePeriodic | default(False) }}"
-      eachUser: false
-      defaultTransition: APP
-      selectableTransition: []
-      allowOtherAuthn: false
-      otherAuthnFido: PasswordWithCookie
-  - key: "nsam/idp/deviceManagementCookie"
-    value:
-      app_name: idp
-      daysForExpire: "{{ daysForExpire }}"
-      daysForCheckBeforeExpire: "0"
-      daysForExtendingLimit: "0"
-      config_name: deviceManagementCookie
+#  - key: "nsam/idp/authmethod"
+#    value:
+#      app_name: idp
+#      config_name: authmethod
+#      type:
+#      - Periodic
+#      - MFA
+#      periodicSessionAttribute:
+#      - passwdChangedDatetime
+#      DBRecording: true
+#      mfaAuthmethod: PasswordTotp
+#      usePeriodic: true
+#      defaultTransition: APP
+#      selectableTransition:
+#      - APP
   - key: "nsam/idp/ldap"
     value:
       app_name: idp
-      baseDN: ou=Users,{{ dn_suffix }}
-      bindDN: cn=Manager,{{ dn_suffix }}
-      bindDNCredential: "{{ db_password }}"
+      baseDN: "ou=People,{{ dn_suffix }}"
+      bindDN: "cn=Manager,{{ dn_suffix }}"
+      bindDNCredential: "{{ credentials.ldap_rootdn_password }}"
       config_name: ldap
-      connectTimeout: PT7S
+      connectTimeout: PT0.025S
+      dataConnectorId: ianet_idp
       hostname: ldap
       port: 389
       subtreeSearch: false
-      userFilter: (&(accountLock=FALSE)(uid={user}))
-  - key: "nsam/idp/dataConnector/idp"
+      userFilter: (uid={user})
+  - key: "nsam/idp/dataConnector/ianet_idp"
     value:
       app_name: idp
-      baseDN: ou=Users,{{ dn_suffix }}
-      bindDN: cn=Manager,{{ dn_suffix }}
-      bindDNCredential: "{{ db_password }}"
+      baseDN: "ou=People,{{ dn_suffix }}"
+      bindDN: "cn=Manager,{{ dn_suffix }}"
+      bindDNCredential: "{{ credentials.ldap_rootdn_password }}"
       config_name: dataConnector
-      connectTimeout: PT7S
-      id: idp
+      connectTimeout: PT0.025S
+      id: ianet_idp
       hostname: ldap
       port: 389
       subtreeSearch: false
-      additionalConfig: ""
-      filter: (uid=$requestContext.principalName)
+      filter: (uid=$resolutionContext.principal)
       type: LDAPDirectory
-  - key: "nsam/idp/samlAttribute/idmRole"
-    value:
-      app_name: idp
-      type: Simple
-      attributeDefinitionId: idmRole
-      config_name: samlAttribute
-      dependencyName: idp
-      friendlyName: idmRole
-      saml1EncodeName: idmRole
-      saml2EncodeName: idmRole
-      sourceAttributeId: idmRole
-      additionalConfig: ""
-  - key: "nsam/idp/samlAttribute/name"
-    value:
-      app_name: idp
-      type: Simple
-      attributeDefinitionId: name
-      config_name: samlAttribute
-      dependencyName: idp
-      friendlyName: name
-      saml1EncodeName: name
-      saml2EncodeName: name
-      sourceAttributeId: cn
-      additionalConfig: ""
-  - key: "nsam/idp/samlAttribute/passwdChangedDatetime"
-    value:
-      app_name: idp
-      type: Simple
-      attributeDefinitionId: passwdChangedDatetime
-      config_name: samlAttribute
-      dependencyName: idp
-      friendlyName: passwdChangedDatetime
-      saml1EncodeName: passwdChangedDatetime
-      saml2EncodeName: passwdChangedDatetime
-      sourceAttributeId: passwdChangedDatetime
-      additionalConfig: ""
-  - key: "nsam/idp/samlAttribute/accountLock"
-    value:
-      app_name: idp
-      type: Simple
-      attributeDefinitionId: accountLock
-      config_name: samlAttribute
-      dependencyName: idp
-      friendlyName: accountLock
-      saml1EncodeName: accountLock
-      saml2EncodeName: accountLock
-      sourceAttributeId: accountLock
-      additionalConfig: ""
   - key: "nsam/idp/samlAttribute/uid"
     value:
       app_name: idp
       type: Simple
       attributeDefinitionId: uid
       config_name: samlAttribute
-      dependencyName: idp
+      dependencyName: ianet_idp
+      saml1EncodeName: ""
       friendlyName: uid
-      saml1EncodeName: uid
       saml2EncodeName: uid
       sourceAttributeId: uid
       additionalConfig: ""
-  - key: "nsam/idp/samlAttributeFilter/idmRoleAllow"
+  - key: "nsam/idp/samlAttribute/proselfid"
     value:
       app_name: idp
-      attributeDefinitionId:
-      - idmRole
-      config_name: samlAttributeFilter
-      policyId: idmRoleAllow
+      type: Simple
+      attributeDefinitionId: proselfid
+      config_name: samlAttribute
+      dependencyName: ianet_idp
+      saml1EncodeName: ""
+      friendlyName: proselfid
+      saml2EncodeName: proselfid
+      sourceAttributeId: uid
       additionalConfig: ""
-      restriction:
-      - '*'
-  - key: "nsam/idp/samlAttributeFilter/nameAllow"
+  - key: "nsam/idp/samlAttribute/ssouid"
     value:
       app_name: idp
-      attributeDefinitionId:
-      - name
-      config_name: samlAttributeFilter
-      policyId: nameAllow
+      type: Simple
+      attributeDefinitionId: ssouid
+      config_name: samlAttribute
+      dependencyName: ianet_idp
+      saml1EncodeName: ""
+      friendlyName: ssouid
+      saml2EncodeName: ssouid
+      sourceAttributeId: uid
       additionalConfig: ""
-      restriction:
-      - '*'
-  - key: "nsam/idp/samlAttributeFilter/uidAllow"
+  - key: "nsam/idp/samlAttributeFilter/idAndRole"
     value:
       app_name: idp
       attributeDefinitionId:
       - uid
+      - userType
       config_name: samlAttributeFilter
-      policyId: uidAllow
+      policyId: idAndRole
       additionalConfig: ""
       restriction:
-      - '*'
-  - key: "nsam/idp/samlAttributeFilter/passwdChangedDatetimeAllow"
+      - https://idm.auth.iamas.ac.jp/Shibboleth.sso
+      - https://log.auth.iamas.ac.jp/Shibboleth.sso
+      - https://dnsadmin.auth.iamas.ac.jp/Shibboleth.sso
+      - https://login.auth.iamas.ac.jp/Shibboleth.sso
+      - https://zabbix.auth.iamas.ac.jp/Shibboleth.sso
+      - https://gw.auth.iamas.ac.jp/Shibboleth.sso
+  - key: "nsam/idp/samlAttributeFilter/m365"
     value:
       app_name: idp
       attributeDefinitionId:
-      - passwdChangedDatetime
+      - ImmutableID
+      - IDPEmail
       config_name: samlAttributeFilter
-      policyId: passwdChangedDatetimeAllow
+      policyId: m365
       additionalConfig: ""
       restriction:
-      - '*'
-  - key: "nsam/idp/samlAttributeFilter/accountLockAllow"
+      - urn:federation:MicrosoftOnline
+  - key: "nsam/idp/samlAttributeFilter/proself"
     value:
       app_name: idp
       attributeDefinitionId:
-      - accountLock
+      - proselfid
       config_name: samlAttributeFilter
-      policyId: accountLockAllow
+      policyId: proself
       additionalConfig: ""
       restriction:
-      - '*'
+      - https://wd.iamas.ac.jp/proself
+  - key: "nsam/idp/samlAttributeFilter/moodle"
+    value:
+      app_name: idp
+      attributeDefinitionId:
+      - ssouid
+      - surName
+      - surNameEn
+      - givenName
+      - givenNameEn
+      - emailAddress
+      config_name: samlAttributeFilter
+      policyId: moodle
+      additionalConfig: ""
+      restriction:
+      - https://el.iamas.ac.jp/sp/shibboleth
+  - key: "nsam/idp/relyingPartyOverrides/m365"
+    value:
+      app_name: idp
+      config_name: relyingPartyOverrides
+      id: m365
+      relyingPartyIds: urn:federation:MicrosoftOnline
+      encryptAssertions: "false"
+      signResponses: "false"
+      signAssertions: "true"
   - key: "nsam/idp/samlNameId"
     value:
       app_name: idp
       config_name: samlNameId
-      defaultFormat: "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent"
-      persistentSourceAttribute: uid
-      persistentSalt: "dummy-value for salt"
-
-am_kv_force_passwd:
-  - key: "nsam/idp/forceRedirect"
+      defaultFormat: urn:oasis:names:tc:SAML:2.0:nameid-format:persistent
+      persistentSalt: "{{ credentials.idp_persistentid_salt }}"
+      persistentSourceAttribute: NETSOARER_USERID
+  - key: "nsam/idp/nameIdGenerators"
     value:
-      app_name: AccessManager
-      config_name: forceRedirect
-      enable: true
-      monitoringEnable: false
-      url: "https://idm.{{ domain }}/changePassword/changePassword?uid=%1$s&spid=%2$s&requiredOnly=TRUE&noPassword=FALSE"
-am_kv: "{{ am_kv_common + am_kv_metadataFile + ([] if pwAvailableDays == 0 else am_kv_force_passwd) }}"
+      app_name: idp
+      config_name: nameIdGenerators
+      attributeSourceAttributes:
+      - ImmutableID
+      attributeSourceFormat:
+      - urn:oasis:names:tc:SAML:2.0:nameid-format:persistent
+      generatorsOrder: attributeSourcedFirst
+  - key: "nsam/idp/mailConfig"
+    value:
+      app_name: idp
+      config_name: mailConfig
+      user: "kitamura@procube.jp"
+      password: "wesficujxlsynmek"
+      host: "smtp.gmail.com"
+      port: 587
+      useSmtpAuth: true
+      useSmtpStarttls: true
+
+am_user_kv: "{{ am_kv_user_common + am_kv_metadataFile }}"

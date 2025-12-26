@@ -1,0 +1,38 @@
+#!/bin/sh
+
+DEST_DIR="/etc/openldap/certs"
+CA_FILE_DEST="${DEST_DIR}/chain.pem"
+CERT_FILE_DEST="${DEST_DIR}/cert.pem"
+KEY_FILE_DEST="${DEST_DIR}/key.pem"
+
+SRC_DIR="/var/tmp/renewCerts"
+CA_FILE_SRC="${SRC_DIR}/chain.pem"
+CERT_FILE_SRC="${SRC_DIR}/cert.pem"
+KEY_FILE_SRC="${SRC_DIR}/privkey.pem"
+
+RESTART_REQUIRED=0
+
+if ! diff -q "$CA_FILE_SRC" "$CA_FILE_DEST" >/dev/null 2>&1; then
+  echo "Update CA cert"
+  cp "$CA_FILE_SRC" "$CA_FILE_DEST"
+  RESTART_REQUIRED=1
+fi
+
+if ! diff -q "$CERT_FILE_SRC" "$CERT_FILE_DEST" >/dev/null 2>&1; then
+  echo "Update cert"
+  cp "$CERT_FILE_SRC" "$CERT_FILE_DEST"
+  RESTART_REQUIRED=1
+fi
+
+if ! diff -q "$KEY_FILE_SRC" "$KEY_FILE_DEST" >/dev/null 2>&1; then
+  echo "Update key"
+  cp "$KEY_FILE_SRC" "$KEY_FILE_DEST"
+  RESTART_REQUIRED=1
+fi
+
+
+if [ $RESTART_REQUIRED -eq 1 ]; then
+  echo "execute update"
+  chown ldap.ldap ${DEST_DIR}/*.pem
+  ldapmodify -x -D cn=config -w {{ credentials.ldap_config_password }} -f "${DEST_DIR}/replace_tls.ldif"
+fi

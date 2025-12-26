@@ -1,45 +1,7 @@
 ---
 ansible_python_interpreter: /root/consul/bin/python
-saml_certs_dir: "{{ hive_context_dir }}/saml-certs"
-CN: "saml"
-saml_cert: "{{ lookup('file', saml_certs_dir + '/' + CN + '_cert.pem') }}"
-saml_serial: "{{ lookup('pipe', 'openssl x509 -in ' + saml_certs_dir + '/saml_cert.pem -noout -serial') | regex_replace('serial=','') }}"
-saml_key: "{{ lookup('file', saml_certs_dir + '/' + CN + '_key.pem') }}"
-saml_cert_stripped: "{{ saml_cert | replace('-----BEGIN CERTIFICATE-----\n','') | replace('-----END CERTIFICATE-----','') }}"
-
-webgate_monitor_sp:
-  key: "SamlSps/monitor.{{ domain }}"
-  value:
-    fqdn: "monitor.{{ domain }}"
-    idpEntityId: "https://auth.{{ domain }}/idp/shibboleth"
-    uidAttrName: uid
-    certificateFqdn: "sp-dummy.{{ domain }}"
-    accessControl: "<Rule require='HTTP_REMOTEGROUP'>IDM_ADMIN</Rule>"
-    checkAddress: "none"  
-webgate_monitor_proxy:
-  key: "proxyPasses/monitor10052"
-  value:
-    authentication: saml
-    pathPattern: /
-    protocol: http
-    scheduler: ss
-    service: monitor10052
-    upstreams:
-    - "{{ hostvars[groups['repository'] | intersect(groups[hive_stage]) | first].hive_private_ip }}:10052"
-    virtualHost: monitor
-webgate_monitor_virtualhost:
-  key: "virtualHosts/monitor"
-  value:
-    fqdn: "monitor.{{ domain }}"
-    checkFQDN: true
-    certificateFqdn: "monitor.{{ domain }}"
-    name: monitor
-    useWildcard: false
-    verifySslClient: off
-    vsvcPrefix: global
-
 webgate_kv_samlsps: >-
-  {%- set output_services = [webgate_monitor_sp, webgate_monitor_virtualhost] -%}
+  {%- set output_services = [] -%}
   {%- for s in groups['services'] | intersect(groups[hive_stage]) -%}
     {%- set labels = (hostvars[s].hive_labels | default({})) -%}
     {%- if (labels.webgate.authentication | default("none")) == "saml"  or
@@ -47,9 +9,8 @@ webgate_kv_samlsps: >-
       {%- set published_name = (labels.published_name | default(s)) -%}
       {%- set value = {
           "fqdn": published_name + "." + domain,
-          "idpEntityId": "https://auth." + domain + "/idp/shibboleth",
+          "idpEntityId": labels.webgate.idpEntityId | default(default_entity_id),
           "uidAttrName": "uid",
-          "checkAddress": "none",
           "certificateFqdn": "sp-dummy." + domain
       } -%}
       {% if labels.webgate.access_control is defined -%}
@@ -64,55 +25,66 @@ webgate_kv_samlsps: >-
   {{ output_services }}
 
 webgate_kv_proxies: >-
-  {%- set output_services = [webgate_monitor_proxy] -%}
+  {%- set output_services = [] -%}
   {%- for s in groups['services'] | intersect(groups[hive_stage]) -%}
     {%- set labels = (hostvars[s].hive_labels | default({})) -%}
     {%- if labels.webgate is defined -%}
       {%- set published_name = (labels.published_name | default(s)) -%}
-      {%- for p in labels.webgate.proxies -%}
-        {%- set portname = (p.setService if p.setService is defined else s) + 
-            (p.target_port | string) +
-            (p.target_protocol | default('http')) +
-            (p.postfix if p.postfix is defined else '') -%}
-        {%- set value = {
-            "authentication": (p.authentication | default(labels.webgate.authentication | default("none"))),
-            "pathPattern": (p.pathPattern | default("/")),
-            "protocol": (p.target_protocol | default("http")),
-            "scheduler": "ss",
-            "service": portname,
-            "upstreams": [(p.setService if p.setService is defined else s) + ':' + (p.target_port | string)],
-            "virtualHost": published_name,
-            "maxBodySize": (p.maxBodySize | default(1))
-            } -%}
-        {%- if p.corsSitesPattern is defined %}{% set _ = value.update({"corsSitesPattern": p.corsSitesPattern}) %}{% endif -%}
-        {%- if p.corsAllowHeaders is defined %}{% set _ = value.update({"corsAllowHeaders": p.corsAllowHeaders}) %}{% endif -%}
-        {%- if p.corsExporseHeaders is defined %}{% set _ = value.update({"corsExporseHeaders": p.corsExporseHeaders}) %}{% endif -%}
-        {%- if p.useWebSocket is defined %}{% set _ = value.update({"useWebSocket": p.useWebSocket}) %}{% endif -%}
-        {%- if p.readTimeout is defined %}{% set _ = value.update({"readTimeout": p.readTimeout}) %}{% endif -%}
+      {%- if labels.webgate.proxies is defined -%}
+        {%- for p in labels.webgate.proxies -%}
+          {%- set portname = s + (p.target_port | string) +
+              (p.target_protocol | default('http')) +
+              (':' + p.postfix if p.postfix is defined else '') -%}
+          {%- set _ = output_services.append({
+            "key": "proxyPasses/" + portname,
+            "value": {
+              "authentication": (p.authentication | default(labels.webgate.authentication | default("none"))),
+              "pathPattern": (p.pathPattern | default("/")),
+              "protocol": (p.target_protocol | default("http")),
+              "scheduler": "ss",
+              "service": portname,
+              "upstreams": [s + ':' + (p.target_port | string)],
+              "virtualHost": published_name,
+              "maxBodySize": (p.maxBodySize | default(1))
+              }
+            }) -%}
+          {%- if p.impersonate is defined -%}
+            {%- set _ = p.impersonate.update({"name": portname}) -%}
+            {%- set _ = output_services.append({
+              "key": "Impersonations/" + portname,
+              "value": p.impersonate
+            }) -%}
+          {%- endif -%}
+        {%- endfor -%}
         {%- set _ = output_services.append({
-          "key": "proxyPasses/" + portname,
+          "key": "virtualHosts/" + published_name,
+          "value": {
+            "fqdn":  published_name + "." + domain,
+            "certificateFqdn": published_name + "." + domain,
+            "name": published_name,
+            "verifySslClient": "off",
+            "vsvcPrefix": "global"
+            }
+          }) -%}
+      {%- endif -%}
+      {%- for p in (labels.webgate.virtual_services | default([])) -%}
+        {%- set portname = s + (p.target_port | string) + p.protocol -%}
+        {%- set value = {
+            "service": portname,
+            "virtualIp": p.source_ip,
+            "port": p.source_port,
+            "scheduler": "rr",
+            "mode": p.mode,
+            "udp": p.protocol == 'udp'
+          } -%}
+        {% if p.target_ip is defined -%}
+          {%- set _ = value.update({"dests": [{"ip": p.target_ip, "port": p.target_port}]}) -%}
+        {%- endif -%}
+        {%- set _ = output_services.append({
+          "key": "virtualServices/" + portname,
           "value": value
           }) -%}
-        {%- if p.impersonate is defined -%}
-          {%- set _ = p.impersonate.update({"name": portname}) -%}
-          {%- set _ = output_services.append({
-            "key": "Impersonations/" + portname,
-            "value": p.impersonate
-          }) -%}
-        {%- endif -%}
       {%- endfor -%}
-      {%- set _ = output_services.append({
-        "key": "virtualHosts/" + published_name,
-        "value": {
-          "fqdn":  published_name + "." + domain,
-          "checkFQDN": true,
-          "certificateFqdn":  published_name + "." + domain,
-          "name": published_name,
-          "useWildcard": false,
-          "verifySslClient": "off",
-          "vsvcPrefix": "global"
-          }
-        }) -%}
     {%- endif -%}
   {%- endfor -%}
   {{ output_services }}
@@ -133,15 +105,16 @@ webgate_kv_common:
       name: uid
       source: uid
       type: StringAttributeDecoder
-  - key: "certificates/sp-dummy.{{ domain }}"
+  - key: "attributes/mail"
     value:
-      fqdn: "sp-dummy.{{ domain }}"
-      # this is intentional spelling miss to match WG2
-      cerificate: |
-        -----BEGIN CERTIFICATE-----
-        {{ saml_cert_stripped }}-----END CERTIFICATE-----
-      privateKey: "{{ saml_key }}"
-      serialNumber: "{{ saml_serial }}"
+      name: mail
+      source: mail
+      type: StringAttributeDecoder
+  - key: "attributes/vlan"
+    value:
+      name: vlan
+      source: vlan
+      type: StringAttributeDecoder
   - key: "metadatas/idp"
     value:
       metadata: |
@@ -155,7 +128,7 @@ webgate_kv_common:
             <IDPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol urn:oasis:names:tc:SAML:1.1:protocol urn:mace:shibboleth:1.0">
         <!--
                 <Extensions>
-                    <shibmd:Scope regexp="false">auth.{{ domain }}</shibmd:Scope>
+                    <shibmd:Scope regexp="false">idp.{{ domain }}</shibmd:Scope>
                     <mdui:UIInfo>
                         <mdui:DisplayName xml:lang="en">XXXXXX A Name for the IdP XXXXXX</mdui:DisplayName>
                         <mdui:Description xml:lang="en">XXXXXX Enter a description of your IdP XXXXXX</mdui:Description>
@@ -167,7 +140,7 @@ webgate_kv_common:
         <ds:KeyInfo>
         <ds:X509Data>
         <ds:X509Certificate>
-        {{ saml_cert_stripped }}
+        {{ saml_dummy_cert_stripped }}
         </ds:X509Certificate>
         </ds:X509Data>
         </ds:KeyInfo>
@@ -178,8 +151,12 @@ webgate_kv_common:
                 <ArtifactResolutionService Binding="urn:oasis:names:tc:SAML:2.0:bindings:SOAP"
                     Location="https://auth.{{ domain }}/idp/profile/SAML2/SOAP/ArtifactResolution"
                     index="2"/>
+                <!--
                 <SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="https://auth.{{ domain }}/idp/profile/SAML2/Redirect/SLO"/>
                 <SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://auth.{{ domain }}/idp/profile/SAML2/POST/SLO"/>
+                <SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST-SimpleSign" Location="https://auth.{{ domain }}/idp/profile/SAML2/POST-SimpleSign/SLO"/>
+                <SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:SOAP" Location="https://auth.{{ domain }}/idp/profile/SAML2/SOAP/SLO"/>
+                -->
                 <NameIDFormat xmlns="urn:oasis:names:tc:SAML:2.0:metadata">urn:oasis:names:tc:SAML:2.0:nameid-format:transient</NameIDFormat>
                 <NameIDFormat xmlns="urn:oasis:names:tc:SAML:2.0:metadata">urn:oasis:names:tc:SAML:2.0:nameid-format:persistent</NameIDFormat>
                 <NameIDFormat xmlns="urn:oasis:names:tc:SAML:2.0:metadata">urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</NameIDFormat>
@@ -200,13 +177,13 @@ webgate_kv_common:
 
             <AttributeAuthorityDescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol urn:oasis:names:tc:SAML:1.1:protocol">
                 <Extensions>
-                    <shibmd:Scope regexp="false">auth.{{ domain }}</shibmd:Scope>
+                    <shibmd:Scope regexp="false">idp.{{ domain }}</shibmd:Scope>
                 </Extensions>
                 <KeyDescriptor>
         <ds:KeyInfo>
         <ds:X509Data>
         <ds:X509Certificate>
-        {{ saml_cert_stripped }}
+        {{ saml_dummy_cert_stripped }}
         </ds:X509Certificate>
         </ds:X509Data>
         </ds:KeyInfo>
@@ -217,6 +194,45 @@ webgate_kv_common:
                     Location="https://auth.{{ domain }}/idp/profile/SAML2/SOAP/AttributeQuery"/>
             </AttributeAuthorityDescriptor>
         </EntityDescriptor>
-      name: idp
+  - key: "virtualServices/global-proxy"
+    value:
+      dests: []
+      mode: NAT-ONGW
+      port: 80
+      scheduler: rr
+      service: global-proxy
+      virtualIp: "{{ web_vip }}"
+  - key: "virtualServices/global-sslProxy"
+    value:
+      dests: []
+      mode: NAT-ONGW
+      port: 443
+      scheduler: rr
+      service: global-sslProxy
+      virtualIp: "{{ web_vip }}"
+  - key: "virtualServices/sv-proxy"
+    value:
+      dests: []
+      mode: NAT-ONGW
+      port: 80
+      scheduler: rr
+      service: sv-proxy
+      virtualIp: "{{ web_vip }}"
+  - key: "virtualServices/sv-sslProxy"
+    value:
+      dests: []
+      mode: NAT-ONGW
+      port: 443
+      scheduler: rr
+      service: sv-sslProxy
+      virtualIp: "{{ web_vip }}"
+  - key: "certificates/sp-dummy.{{ domain }}"
+    value:
+      fqdn: "sp-dummy.{{ domain }}"
+      # this is intentional spelling miss to match WG2
+      cerificate: "{{ credentials.saml_dummy_cert }}"
+      privateKey: "{{ credentials.saml_dummy_key }}"
+      serialNumber: "{{ credentials.saml_serial_number }}"
 
-webgate_kv: "{{ webgate_kv_common + webgate_kv_proxies + webgate_kv_samlsps }}"
+webgate_kv: "{{ webgate_kv_common + webgate_kv_samlsps + webgate_kv_proxies }}"
+

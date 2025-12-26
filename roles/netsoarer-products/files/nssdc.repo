@@ -3,7 +3,6 @@ name=Procube - Tools for deployment server $basearch
 baseurl=https://repository.procube.jp/yumrepos/products/common/$basearch/
 enabled=1
 gpgcheck=0
-#sslcacert=/etc/pki/tls/certs/sf_bundle-g2.crt
 sslclientcert=/etc/pki/tls/certs/nssdc-client.crt
 sslclientkey=/etc/pki/tls/private/nssdc-client.key
 
@@ -12,7 +11,6 @@ name=Procube - Tools for deployment server noarch
 baseurl=https://repository.procube.jp/yumrepos/products/common/noarch/
 enabled=1
 gpgcheck=0
-#sslcacert=/etc/pki/tls/certs/sf_bundle-g2.crt
 sslclientcert=/etc/pki/tls/certs/nssdc-client.crt
 sslclientkey=/etc/pki/tls/private/nssdc-client.key
 
@@ -21,7 +19,6 @@ name=Procube - Tools for deployment server $basearch el$releasever
 baseurl=https://repository.procube.jp/yumrepos/products/el$releasever/$basearch/
 enabled=1
 gpgcheck=0
-#sslcacert=/etc/pki/tls/certs/sf_bundle-g2.crt
 sslclientcert=/etc/pki/tls/certs/nssdc-client.crt
 sslclientkey=/etc/pki/tls/private/nssdc-client.key
 
@@ -30,7 +27,6 @@ name=Procube - Tools for deployment server noarch el$releasever
 baseurl=https://repository.procube.jp/yumrepos/products/el$releasever/noarch/
 enabled=1
 gpgcheck=0
-#sslcacert=/etc/pki/tls/certs/sf_bundle-g2.crt
 sslclientcert=/etc/pki/tls/certs/nssdc-client.crt
 sslclientkey=/etc/pki/tls/private/nssdc-client.key
 
@@ -39,7 +35,6 @@ name=Procube - Tools for deployment server $basearch
 baseurl=https://repository.procube.jp/yumrepos/buildtools/common/$basearch/
 enabled=1
 gpgcheck=0
-#sslcacert=/etc/pki/tls/certs/sf_bundle-g2.crt
 sslclientcert=/etc/pki/tls/certs/nssdc-client.crt
 sslclientkey=/etc/pki/tls/private/nssdc-client.key
 
@@ -48,7 +43,6 @@ name=Procube - Tools for deployment server noarch
 baseurl=https://repository.procube.jp/yumrepos/buildtools/common/noarch/
 enabled=1
 gpgcheck=0
-#sslcacert=/etc/pki/tls/certs/sf_bundle-g2.crt
 sslclientcert=/etc/pki/tls/certs/nssdc-client.crt
 sslclientkey=/etc/pki/tls/private/nssdc-client.key
 
@@ -57,7 +51,6 @@ name=Procube - Tools for deployment server $basearch el$releasever
 baseurl=https://repository.procube.jp/yumrepos/buildtools/el$releasever/$basearch/
 enabled=1
 gpgcheck=0
-#sslcacert=/etc/pki/tls/certs/sf_bundle-g2.crt
 sslclientcert=/etc/pki/tls/certs/nssdc-client.crt
 sslclientkey=/etc/pki/tls/private/nssdc-client.key
 
@@ -66,7 +59,6 @@ name=Procube - Tools for deployment server noarch el$releasever
 baseurl=https://repository.procube.jp/yumrepos/buildtools/el$releasever/noarch/
 enabled=1
 gpgcheck=0
-#sslcacert=/etc/pki/tls/certs/sf_bundle-g2.crt
 sslclientcert=/etc/pki/tls/certs/nssdc-client.crt
 sslclientkey=/etc/pki/tls/private/nssdc-client.key
 
@@ -75,7 +67,6 @@ name=Procube - Imported packages for NS required $basearch
 baseurl=https://repository.procube.jp/yumrepos/imported/$releasever/common/$basearch/
 enabled=1
 gpgcheck=0
-#sslcacert=/etc/pki/tls/certs/sf_bundle-g2.crt
 sslclientcert=/etc/pki/tls/certs/nssdc-client.crt
 sslclientkey=/etc/pki/tls/private/nssdc-client.key
 
@@ -84,7 +75,6 @@ name=Procube - Imported packages for NS required noarch
 baseurl=https://repository.procube.jp/yumrepos/imported/$releasever/common/noarch/
 enabled=1
 gpgcheck=0
-#sslcacert=/etc/pki/tls/certs/sf_bundle-g2.crt
 sslclientcert=/etc/pki/tls/certs/nssdc-client.crt
 sslclientkey=/etc/pki/tls/private/nssdc-client.key
 
@@ -93,7 +83,6 @@ name=Procube - Imported packages for NS required $basearch el$releasever
 baseurl=https://repository.procube.jp/yumrepos/imported/$releasever/el$releasever/$basearch/
 enabled=1
 gpgcheck=0
-#sslcacert=/etc/pki/tls/certs/sf_bundle-g2.crt
 sslclientcert=/etc/pki/tls/certs/nssdc-client.crt
 sslclientkey=/etc/pki/tls/private/nssdc-client.key
 
@@ -102,6 +91,5 @@ name=Procube - Imported packages for NS required noarch el$releasever
 baseurl=https://repository.procube.jp/yumrepos/imported/$releasever/el$releasever/noarch/
 enabled=1
 gpgcheck=0
-#sslcacert=/etc/pki/tls/certs/sf_bundle-g2.crt
 sslclientcert=/etc/pki/tls/certs/nssdc-client.crt
 sslclientkey=/etc/pki/tls/private/nssdc-client.key

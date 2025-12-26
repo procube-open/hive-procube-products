@@ -1,0 +1,126 @@
+#set ($rpContext = $profileRequestContext.getSubcontext('net.shibboleth.idp.profile.context.RelyingPartyContext'))
+#set ($username = $tokenUserContext.getUsername())
+##
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>#springMessageText("idp.otp.title", "NetSoarer AccessManager - OTP Authentication")</title>
+
+  <link href="/ns_webbox/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="/ns_webbox/fontawesome/css/all.css" rel="stylesheet" />
+  <link href="/idp_userFiles/nsam.css?v=113" rel="stylesheet" />
+
+  <script src="/ns_webbox/jquery.min.js"></script>
+  <script src="/ns_webbox/bootstrap/js/bootstrap.bundle.js"></script>
+  <script src="/ns_webbox/langChange.js"></script>
+  <script src="/idp_userFiles/langmap.json?v=113"></script>
+
+  <style type="text/css">
+@media (min-width: 768px) {
+  .container {
+    max-width: 700px;
+  }
+}
+
+body {
+  background-color: #fff;
+}
+  </style>
+  <script>
+    function closeAlert() {
+      $('#loginPrecheckPageErrorMessage').hide();
+      $('#loginPageErrorMessage').hide();
+    }
+    function checkSubmit() {
+     closeAlert();
+      if (tokenLoginForm.j_tokenNumber.value == '') {
+        $('#loginPrecheckPageErrorMessage').addClass("alert");
+        $('#loginPrecheckPageErrorMessage').addClass("alert-warning");
+        $("#loginPrecheckPageErrorMessage").css('display', 'block');
+        $("#loginPageErrorMessage").hide();
+        return false;
+      }
+      $('#login-tokenNumber').attr('readonly', true);
+      var loginBtn = $('#btn-login');
+      loginBtn.button('loading');
+      return true;
+    }
+  </script>
+
+</head>
+<body onload="initLang(); ">
+
+  <div class="main-logo-area"><div class="main-logo"></div></div>
+  <div class="container otpForm"">
+    <div class="otp_login">
+      <div class="row mb-3">
+        <div class="col-xs-12 col-sm-10">
+          <h3>
+            <span id="login-form-mfa-totp-title"></span>
+          </h3>
+#if( $username || "$username" != "" )
+          <span id="login-mfa-totp-message"></span>
+#end
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-xs-12 col-sm-10">
+
+          <div id="loginPrecheckPageErrorMessage" style="display:none">
+            <span id="login-tokencode-empty"></span>
+            <button type="button" class="close" onClick="closeAlert()">&times;</button>
+          </div>
+        </div>
+
+        <div class="col-xs-8 col-sm-5">
+    #parse("userFiles/default-login-error.vm")
+
+          <form name="tokenLoginForm" action="$flowExecutionUrl" method="post" onSubmit="return checkSubmit();">
+            <div class="input-group">
+              <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                  <span class="input-group-text"><i class="fas fa-user"></i></span>
+                </div>
+                <input id="login-username" type="text" class="form-control" name="j_username" placeholder=""
+#if( $username || "$username" != "" )
+                    value="$username" readonly
+#end
+                  />
+              </div>
+              <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                  <span class="input-group-text"><i class="fas fa-tablet-alt"></i></span>
+                </div>
+                <input class="form-control" id="login-tokenNumber" name="j_tokenNumber" type="text" autofocus />
+              </div>
+              <button class="btn btn-lg btn-block btn-info" type="submit" name="_eventId_proceed">
+                  <span id="btn-mfa-totp-login"></span> <i class="fas fa-arrow-circle-right"></i></input>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+      <div class="dropdown mt-3">
+        <button class="btn btn-sm btn-outline-info dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <span id="lang_title">lang</span>
+        </button>
+        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+          <a class="dropdown-item" href="#" onClick="changeLanguage('ja'); return false;" id="lang_jp"></a>
+          <a class="dropdown-item" href="#" onClick="changeLanguage('en'); return false;" id="lang_en"></a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+##  <ul class="pager">
+##    <li class="next"><a href="$flowExecutionUrl&_eventId=GenerateTokenSecrets"><span id="login-totp-go-register-new-token"></span></a></li>
+##  </ul>
+
+</body>
+</html>
+

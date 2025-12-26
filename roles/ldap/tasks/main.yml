@@ -1,27 +1,82 @@
 ---
-- name: setup pip
+- name: Install dependent packages
   apk:
     name:
-    - py3-pip
-    - python3-dev
+    - openssl
     - gcc
-    - g++
+    - python3-dev
+    - libffi-dev
+    - musl-dev
+    - linux-headers
     - openldap-dev
-- name: install python-ldap
+    - py3-pip
+    - openssh
+    - openssh-server
+    - openssh-client
+    state: present
+    update_cache: yes
+- name: Install requires
   pip:
     name:
-    - python-ldap
-- name: configure modules
-  ldap_attrs:
-    dn: "cn=module{0},cn=config"
-    bind_dn: "cn=config"
-    bind_pw: "{{ db_password }}"
-    attributes:
-      olcModuleLoad: "{0}argon2"
-- name: Set password hash policy
-  ldap_attrs:
-    dn: "olcDatabase={-1}frontend,cn=config"
-    bind_dn: "cn=config"
-    bind_pw: "{{ db_password }}"
-    attributes:
-      olcPasswordHash: "{ARGON2}"
+    - pyldap
+    state: latest
+    executable: pip3
+- name: put supervisor inis
+  copy:
+    src: "{{ item }}"
+    dest: "/etc/supervisor.d/"
+    owner: root
+    group: root
+    mode: 0644
+  loop:
+  - sshd.ini
+- name: pre setup sshd
+  shell: /usr/bin/ssh-keygen -A
+- name: create ssh dir
+  file:
+    dest: "/root/.ssh/"
+    state: directory
+    mode: 0700
+    owner: root
+    group: root
+#- name: "put ssh pub"
+#  copy:
+#    content: "{{ webgate_ssh_public }}"
+#    dest: "/root/.ssh/authorized_keys"
+#    mode: 0600
+#    owner: root
+#    group: root
+- name: ulimit open files
+  blockinfile:
+    path: /var/lib/openldap/start-slapd.sh 
+    insertafter: "#!/bin/sh"
+    block: |
+      if [ -n "$LDAP_NOFILE" ]; then
+        ulimit -n $LDAP_NOFILE
+      fi
+- name: create certs directory
+  file: path=/etc/openldap/certs state=directory owner=root group=ldap mode=0755
+- name: install files
+  template:
+    src: renewCerts.sh.j2
+    dest: /usr/local/bin/renewCerts.sh
+    owner: root
+    group: root
+    mode: 0755
+- name: put tls updater ldif
+  copy:
+    src: "replace_tls.ldif"
+    dest: "/etc/openldap/certs"
+    owner: root
+    group: ldap
+    mode: 0644
+#- name: escape hash password
+#  replace: 
+#    path: /var/lib/openldap/start-slapd.sh 
+#    regexp: '^  HASHED_PASSWD.*'
+#    replace: '  HASHED_PASSWD=$(slappasswd -s "$LDAP_CONFIG_PASSWORD" | sed -e "s/\//\\\\\\\\\\\\//g")'
+- name: remove debug opts
+  replace: 
+    path: /var/lib/openldap/start-slapd.sh 
+    regexp: '^exec /usr/sbin/slapd.*'
+    replace: 'exec /usr/sbin/slapd -h "ldap:/// ldapi:/// ldaps:///" -g ldap -u ldap -F /etc/openldap/slapd.d -d 256'

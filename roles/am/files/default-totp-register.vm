@@ -1,0 +1,191 @@
+#set ($rpContext = $profileRequestContext.getSubcontext('net.shibboleth.idp.profile.context.RelyingPartyContext'))
+#set ($userName = $authenticationContext.getSubcontext('net.shibboleth.idp.authn.context.UsernamePasswordContext', true).getUsername())
+#set ($totpUrl = $authenticationContext.getSubcontext('jp.procube.security.authn.totp.api.context.TokenUserContext').getTotpUrl())
+#set ($sharedSecret = $authenticationContext.getSubcontext('jp.procube.security.authn.totp.api.context.TokenUserContext').getSharedSecret())
+#set ($totpValidateState = $authenticationContext.getSubcontext('jp.procube.security.authn.totp.api.context.TokenUserContext').getState())
+#if( $totpValidateState && "$totpValidateState" != "" )
+  #if( "$totpValidateState" == "INVALID_CODE" )
+    #set ($rgstErrMessage = "totp-gauth-registration-wizard-stp3-code-invalid-message")
+  #elseif( "$totpValidateState" == "CANT_VALIDATE" )
+    #set ($rgstErrMessage = "totp-gauth-registration-wizard-stp3-code-cant-validate-message")
+  #elseif( "$totpValidateState" == "NOT_FOUND_IN_STORE" )
+    #set ($rgstErrMessage = "totp-gauth-registration-wizard-stp3-code-store-not-found-message")
+  #elseif( "$totpValidateState" == "CANT_STORE_SECRET" )
+    #set ($rgstErrMessage = "totp-gauth-registration-wizard-stp3-code-cant-store-secret-message")
+  #end
+#end
+##
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>#springMessageText("idp.title", "NetSoarer AccessManager - Setup Google Authenticator")</title>
+
+  <link href="/ns_webbox/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="/ns_webbox/fontawesome/css/all.css" rel="stylesheet" />
+  <link href="/idp_userFiles/nsam.css?v=113" rel="stylesheet"></link>
+  <link href="/idp_userFiles/jquery.steps.css" rel="stylesheet"></link>
+  <link href="/idp_userFiles/jquery.steps.main.css" rel="stylesheet"></link>
+  <link href="/idp_userFiles/jquery.steps.normalize.css" rel="stylesheet"></link>
+
+  <script src="/ns_webbox/jquery.min.js"></script>
+  <script src="/ns_webbox/bootstrap/js/bootstrap.bundle.js"></script>
+  <script src="/ns_webbox/langChange.js"></script>
+  <script src="/idp_userFiles/langmap.json?v=113"></script>
+  <script src="/idp_userFiles/jquery.steps.min.js"></script>
+
+  <style type="text/css">
+@media (min-width: 768px) {
+  .container {
+    max-width: 700px;
+  }
+}
+body {
+  background-color: #fff;
+}
+  </style>
+
+<script type="text/javascript">
+  $(document).ready(function() {
+    var wizard = $("#wizard").steps({
+      headerTag: "h3",
+      bodyTag: "section",
+      enableFinishButton: false,
+      labels: {
+        next: "<span id='totp-gauth-registration-wizard-next-button'>", 
+        previous: "<span id='totp-gauth-registration-wizard-prev-button'>" 
+      },
+#if( $rgstErrMessage && "$rgstErrMessage" != "" )
+      startIndex: 3
+#end
+    });
+    initLang();
+  });
+  function choiceDevice() {
+    var element = document.getElementById("deviceCheck");
+    var radioNode = element.device;
+    var v = radioNode.value;
+    if ( v == "pc") {
+      $(".pc").show();
+      $(".phone").hide();
+    } else if ( v == "phone") {
+      $(".pc").hide();
+      $(".phone").show();
+    }
+  }
+
+  function closeAlert() {
+    $('#rgstPrecheckPageErrorMessage').hide();
+    $('#rgstCodeErrorMessage').hide();
+
+    $('#loginPrecheckPageErrorMessage').hide();
+    $('#loginPageErrorMessage').hide();
+    $('#loginPrecheckInvalidCharPageErrorMessage').hide();
+  }
+  function checkSubmit() {
+   closeAlert();
+    if (tokenRegistrationForm.j_tokenNumber.value == '') {
+      $('#rgstPrecheckPageErrorMessage').addClass("alert");
+      $('#rgstPrecheckPageErrorMessage').addClass("alert-warning");
+      $("#rgstPrecheckPageErrorMessage").css('display', 'block');
+      $("#rgstCodeErrorMessage").hide();
+      return false;
+   }
+   $('#tokenNumber').attr('readonly', true);
+    return true;
+  }
+</script>
+
+
+</head>
+<body onload="initLang(); choiceDevice();">
+  <div class="main-logo-area"><div class="main-logo"></div></div>
+  <div class="py-4 otpSetting container">
+    <p class="h2"><span id="totp-gauth-registration-title"></span></p>
+    <p><span id="totp-gauth-registration-desc"></span></p>
+    <p><span id="totp-gauth-registration-desc2"></span></p>
+    <div id="wizard">
+      <h3><span id="totp-gauth-registration-wizard-stp0-title"></span></h3>
+      <section>
+        <p><span id="totp-gauth-registration-wizard-stp0-message"></span></p>
+        <form id="deviceCheck">
+           <label id="radioLabel"><input id="deviceRadio" type="radio" name="device" value="pc" checked="checked" onchange="choiceDevice()"><span id="totp-gauth-registration-wizard-stp0-label-pc"></span></label>
+           <label id="radioLabel"><input id="deviceRadio" type="radio" name="device" value="phone" onchange="choiceDevice()" ><span id="totp-gauth-registration-wizard-stp0-label-phone"></span></label>
+        </form>
+      </section>
+      <h3><span id="totp-gauth-registration-wizard-stp1-title"></span></h3>
+      <section>
+        <p class="pc"><span id="totp-gauth-registration-wizard-stp1-message-for-pc"></span></p>
+        <p class="phone"><span id="totp-gauth-registration-wizard-stp1-message-for-phone"></span></p>
+        <p><span id="totp-gauth-registration-wizard-stp1-message2"></span></p>
+        <p><span id="totp-gauth-registration-wizard-stp1-message3"></span></p>
+        <div class="phone" style="text-align: center;">
+          <a href="https://apps.apple.com/jp/app/google-authenticator/id388497605?itsct=apps_box&amp;itscg=30200" target="_blank">
+               <img src="/idp_userFiles/black.svg" alt="Download on the App Store" style="border-radius: 13px; width: 200px; height: 83px;"></a>
+          <a href='https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2&hl=ja&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1' target="_blank">
+               <img alt='Google Play で手に入れよう' src='/idp_userFiles/google-play-badge.png' style="width:250px; height: 105px;"/></a>
+        </div>
+      </section>
+
+      <h3><span id="totp-gauth-registration-wizard-stp2-title"></span></h3>
+      <section>
+        <div>
+          <p class="card-text pc"><span id="totp-gauth-registration-wizard-stp2-message1-for-pc"></span></p>
+          <p class="card-text pc"><span id="totp-gauth-registration-wizard-stp2-message2-for-pc"></span></p>
+          <p class="card-text phone"><span id="totp-gauth-registration-wizard-stp2-message1-for-phone"></span> <strong>$sharedSecret</strong></p>
+          <p class="card-text phone"><span id="totp-gauth-registration-wizard-stp2-message2-for-phone"></span></p>
+          <p class="card-text phone"><span id="totp-gauth-registration-wizard-stp2-message3-for-phone"></span></p>
+          <p class="card-text phone"><span id="totp-gauth-registration-wizard-stp2-message4-for-phone"></span></p>
+        </div>
+        <div class="col-md-4 pc"><img src="$request.getContextPath()/public/qrgen?qrdata=$urlEncoder.encode($totpUrl)" height="166px"></div>
+        <div>
+          <p class="card-text pc"><span id="totp-gauth-registration-wizard-stp2-message3-for-pc"></span> <strong>$sharedSecret</strong></p>
+          <p class="card-text pc"><span id="totp-gauth-registration-wizard-stp2-message4-for-pc"></span></p>
+        </div>
+      </section>
+      <h3><span id="totp-gauth-registration-wizard-stp3-title"></span></h3>
+      <section>
+        <p><span id="totp-gauth-registration-wizard-stp3-message"></span></p>
+        <p><span id="totp-gauth-registration-wizard-stp3-message2"></span></p>
+
+        <div id="rgstPrecheckPageErrorMessage" style="display:none">
+          <span id="totp-gauth-registration-wizard-stp3-code-empty-message"></span>
+          <button type="button" class="close" onClick="closeAlert()">&times;</button>
+        </div>
+
+#parse("userFiles/default-login-error.vm")
+        <form name="tokenRegistrationForm" action="$flowExecutionUrl" method="post" onSubmit="return checkSubmit();" class="form-inline">
+          <label for="tokenNumber"><span id="login-mfa-totp-label"></span></label>
+          <input class="form-control mr-sm-2" id="tokenNumber" name="j_tokenNumber" type="text" autofocus />
+          <button class="btn btn-outline-success" type="submit" name="_eventId_proceed">
+            <span id="totp-gauth-registration-wizard-stp3-btn-regist"></span> <i class="fas fa-check"></i>
+          </button>
+        </form>
+      </section>
+
+    </div>
+    <div class="navbar-right py-4">
+      <form name="" action="" method="post">
+        <button type="submit" name="reseld" formaction="$flowExecutionUrl&_eventId=ReSelect"
+           class="btn btn-secondary"><i class="fa fa-undo-alt"></i> <span id="totp-way-backto-selector"></span></button>
+      </form>
+    </div>
+
+    <div class="dropdown">
+      <button class="btn btn-sm btn-outline-info dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <span id="lang_title">lang</span>
+      </button>
+      <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+        <a class="dropdown-item" href="#" onClick="changeLanguage('ja'); return false;" id="lang_jp"></a>
+        <a class="dropdown-item" href="#" onClick="changeLanguage('en'); return false;" id="lang_en"></a>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>
+

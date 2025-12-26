@@ -1,0 +1,61 @@
+---
+plugin: hive_services
+services:
+  am:
+    image:
+      from: almalinux/9-base
+      roles:
+      - timezone
+      - netsoarer-products
+      - hive-syslog
+      - am
+    command:
+    - "/usr/bin/supervisord"
+    - "-n"
+    - "-c"
+    - "/etc/supervisord.conf"
+    ports:
+    - "8787:8787"
+    - "8100:8100"
+    initialize_roles:
+    - am-init
+    labels:
+      published_name: auth
+      webgate:
+        access_control: <Rule require="HTTP_REMOTEGROUP">IDM_ADMIN IDM_OPERATOR</Rule>
+        proxies:
+        - target_port: 8100
+          target_protocol: http
+          pathPattern: /idp/
+        - target_port: 80
+          target_protocol: http
+          pathPattern: /idp_userFiles/
+        - target_port: 8100
+          target_protocol: http
+          pathPattern: /idp-console/
+          postfix: console
+          authentication: saml
+    volumes:
+    - source: am_consul
+      target: /var/consul
+      type: volume
+      drbd:
+        fstype: xfs
+        size: 500M
+  amdb:
+    image:
+      from: "postgres:17.5"
+      roles:
+      - python-aptk
+      - amdb
+    environment:
+      POSTGRES_USER: nsamadmin
+      POSTGRES_DB: "{{ amdb_name }}"
+      POSTGRES_PASSWORD: "{{ db_password }}"
+    volumes:
+      - source: amdb_data
+        target: /var/lib/postgresql/data/
+        type: volume
+        drbd:
+          fstype: xfs
+          size: "1G"

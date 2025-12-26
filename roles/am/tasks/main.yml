@@ -1,61 +1,208 @@
 ---
 # This role installs Access Manager 3
-- name: delete GPG key
-  rpm_key:
-    state: absent
-    key: /etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux
-- name: import GPG key
-  rpm_key:
-    state: present
-    key: https://repo.almalinux.org/almalinux/RPM-GPG-KEY-AlmaLinux
-- name: install epel repository
-  yum:
-    name: epel-release
-    state: present
 - name: install python package
   yum:
-    name: python2-pip
+    name: python3-pip
     state: present
 - name: install consul module
-  pip: name=python-consul state=present
-- name: install NetSoarer Access Manager 3
+  pip:
+    name:
+    - python-consul
+    - setuptools
+    state: present
+- name: install requires
   yum:
     name:
     - sudo
     - initscripts
+    - postgresql
+    - openssh-clients
+    state: latest
+- name: Delete a directory
+  file:
+    path: /root/test-rpms/
+    state: absent
+- name: Copy local rpm files if it exists
+  copy:
+    src: test-rpms
+    dest: /root/
+  ignore_errors: True
+- name: check rpms are exists
+  find:
+    paths: /root/test-rpms/
+    patterns: "*.rpm"
+  register: found_rpms
+- name: install NetSoarer Access Manager 3 from local
+  shell: "yum install -y /root/test-rpms/*.rpm"
+  when: found_rpms.files | length > 0
+- name: install NetSoarer Access Manager 3 from repo
+  yum:
+    name:
     - NetSoarer-AccessManager2
     - NetSoarer-AccessManager2-console
     state: latest
-- name: create directory for patch to remove current config at boot time
-  file:
-    dest: /usr/lib/systemd/system/wildfly.service.d
-    state: directory
-    mode: 0755
-    owner: root
-    group: root
-- name: patch to remove current config at boot time
-  copy:
-    src: override.conf
-    dest: /usr/lib/systemd/system/wildfly.service.d/override.conf
-    mode: 0644
-    owner: root
-    group: root
-- name: enhance memory size of wildfly
-  lineinfile:
-    path: /opt/wildfly/bin/standalone.conf
-    regexp: '   JAVA_OPTS="-Xms64m -Xmx512m -XX:MetaspaceSize=\d+M -XX:MaxMetaspaceSize=\d+m -Djava\.net\.preferIPv4Stack=true"'
-    line: '   JAVA_OPTS="-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=1024m -Djava.net.preferIPv4Stack=true"'
+  when: found_rpms.files | length == 0
 - name: setup consul.json
   copy:
     src: consul.json
     dest: /etc/consul.json
-- name: enable services
-  service: name="{{item}}" enabled=yes
-  with_items:
-    - wildfly
-    - httpd
-- name: put restore script for consul kv
+- name: create appliction for user
+  shell: |
+    nsamctl create idp auth.{{ domain }} 2>&1
+  register: create_idp_result
+  args:
+    creates: /opt/jetty-base/idp
+- name: set proto to http
+  shell: |
+    nsamctl proto auth.{{ domain }} http 2>&1
+#  when: create_idp_result is changed
+  ignore_errors: True
+- name: copy consul kv backup tool
   copy:
-    src: restore-consul-kv.sh
-    dest: /usr/bin
+    src: backup_consulkv.sh
+    dest: /root/backup_consulkv.sh
+    mode: 0755
+    owner: root
+    group: root
+- name: copy consul kv restore tool
+  copy:
+    src: restore_consulkv.sh
+    dest: /root/restore_consulkv.sh
+    mode: 0755
+    owner: root
+    group: root
+- name: set autostart to true
+  replace:
+    path: "/etc/supervisord.d/{{ item }}.ini"
+    regexp: "autostart=false"
+    replace: "autostart=true"
+  loop:
+  - cron
+  - httpd
+- name: supervisorize logrotate conf
+  copy:
+    src: "/usr/share/NetSoarer/AccessManager/supervisorize/{{ item }}.logrotate"
+    remote_src: true
+    dest: "/etc/logrotate.d/{{ item }}"
+    owner: root
+    group: root
+    mode: 0644
+  loop:
+  - httpd
+- name: Add jetty starting delay
+  lineinfile:
+    path: "/usr/bin/jetty-supervisor-wrapper.sh"
+    regexp: '^sleep '
+    line: 'sleep 20'
+    insertbefore: 'exec /usr/bin/java'
+- name: change db host
+  replace:
+    path: /opt/jetty-base/idp/webapps/idp.xml
+    regexp: '127.0.0.1:5432'
+    replace: 'amdb:5432'
+- name: change db password
+  replace:
+    path: /opt/jetty-base/idp/webapps/idp.xml
+    regexp: '"password">nets0@rer'
+    replace: '"password">{{ db_password }}'
+- name: put pgpass
+  template:
+    src: pgpass.j2
+    dest: /root/.pgpass
+    mode: 0600
+    owner: root
+    group: root
+#- name: put logback config
+#  copy:
+#    src: logback.xml
+#    dest: /opt/shibIdpConf_idp/conf/
+#    mode: 0755
+#    owner: wildfly
+#    group: wildfly
+- name: create ssh dir
+  file:
+    dest: "/root/.ssh/"
+    state: directory
+    mode: 0700
+    owner: root
+    group: root
+#- name: put ssh key
+#  copy:
+#    content: "{{ credentials.am_ssh_private }}"
+#    dest: /root/.ssh/id_rsa
+#    mode: "0600"
+#    owner: root
+#    group: root
+- name: create bin dir
+  file:
+    dest: "/root/bin/"
+    state: directory
+    mode: 0755
+    owner: root
+    group: root
+- name: put prov shells
+  copy:
+    src: "{{ item }}"
+    dest: /root/bin/
     mode: "0755"
+    owner: root
+    group: root
+  with_items:
+    - convert_users_seeds_csv.py
+    - transferUsersSeeds.sh
+    - cleanupDeviceMgmt.sh
+- name: add -x to shell
+  file: "dest=/root/bin/{{ item }} mode=a+x"
+  with_items:
+    - transferUsersSeeds.sh
+    - cleanupDeviceMgmt.sh
+- name: install files
+  copy:
+    src: "{{ item }}"
+    dest: /usr/lib/systemd/system/
+  with_items:
+  - seed-regtime-export.service
+  - seed-regtime-export.timer
+- name: enable users_seed timer timer
+  service: name=seed-regtime-export.timer enabled=yes
+  when: hive_stage == 'production'
+#- name: put custom pages
+#  copy:
+#    src: "{{ item }}"
+#    dest: /opt/shibIdpConf_idp/views/userFiles/
+#    owner: jetty
+#    group: jetty
+#  with_items:
+#  - nsam.css
+#  - default-login.vm
+#  - default-totp-registering-selector.vm
+#  - default-totp-register.vm
+#  - default-totp.vm
+- name: put custom config
+  copy:
+    src: "{{ item }}"
+    dest: /opt/shibIdpConf_idp/conf/nsam/
+    owner: jetty
+    group: jetty
+  with_items:
+  - NSAM-DeviceMgr.properties
+- name: open debug port
+  replace:
+    path: /etc/sysconfig/jetty-idp
+    regexp: 'JETTY_OPTS=.*'
+    replace: 'JETTY_OPTS="-Didp.home=${SHIB_CONF_DIR} -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:8787"'
+- name: Add debug props
+  blockinfile:
+    path: /opt/shibIdpConf_idp/conf/idp.properties 
+    block: |
+        idp.loglevel.idp = DEBUG
+        idp.loglevel.ldap = DEBUG
+        idp.loglevel.messages = DEBUG
+        idp.loglevel.encryption = DEBUG
+        idp.loglevel.opensaml = DEBUG
+        idp.loglevel.props = DEBUG
+        idp.loglevel.spring = DEBUG
+        idp.loglevel.container = DEBUG
+        idp.loglevel.xmlsec = DEBUG
+        idp.loglevel.root = DEBUG
+
