@@ -1,6 +1,4 @@
 ---
-dn_suffix: "dc=netsoarer,dc=net"
-
 am_kv_metadataFile: >-
   {%- set output_services = [] -%}
   {%- set published_names = [] -%}

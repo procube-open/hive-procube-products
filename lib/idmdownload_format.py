@@ -16,21 +16,12 @@ class IDMDownloadFormat(AnsibleModule):
   def __init__(self):
     argument_spec = dict(
       mongodb_data=dict(required=True,type='list',elements='dict'),
-      mariadb_data=dict(required=True,type='list',elements='dict'),
       targets=dict(required=True,type='list',elements='dict'),
     )
     super(IDMDownloadFormat, self).__init__(argument_spec=argument_spec, supports_check_mode=True)
 
   def process_task(self):
     phases = []
-
-    # change structure
-    mariadb_data = self.params['mariadb_data']
-    is_tables = {}
-    for dataset in mariadb_data:  
-      is_tables[dataset["item"]["name"]] = dataset["records"]
-
-    # is_tables = list(map(lambda o: {"name": o["item"]["name"], "records": o["records"]}, mariadb_data))
 
     mongodb_data = self.params['mongodb_data']
     phases = {}
@@ -43,8 +34,7 @@ class IDMDownloadFormat(AnsibleModule):
       phases[phase][if_name] = dataset["result"]
 
     result = {
-      'phases_data': phases,
-      'is_tables_data': is_tables
+      'phases_data': phases
     }
 
     # replace values

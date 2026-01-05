@@ -61,7 +61,7 @@ class IDM_facts(AnsibleModule):
     elif 'body' in info:
       body = info['body']
     if int(info['status']) != 200:
-      raise StandardError('Failed to execute the API request: {0}: {1}'.format(
+      raise Exception('Failed to execute the API request: {0}: {1}'.format(
         info['msg'], json.dumps(body, ensure_ascii=False)))
     return json.loads(body)
 

@@ -21,6 +21,7 @@ ns_container_repository: "docker-repository.procube.jp"
 hive_kernel_version: "6.12.0-124.8.1.el10_1.x86_64"
 hive_drbd_download_url: "https://github.com/procube-open/drbd9-rpm/releases/download/Latests/drbd-9.2.15-v9.29.0-6.12.0-124.8.1.el10_1.x86_64.tar.gz"
 
+dn_suffix: "DC={{ domain.split('.') | join(',DC=') }}"
 restore_sequence_mongodb:
 - name: ldap_settings
   interfaces:
@@ -58,6 +59,14 @@ restore_sequence_mongodb:
     key_property: dn
   - name: LdapGenericObjectEditorIF2
     key_property: dn
+- name: layouts
+  interfaces:
+  - name:  _sandboxRoles
+    key_property: name
+  - name: _sandboxSidebar
+    key_property: name
+  - name: _sandboxNavbar
+    key_property: name
 - name: objects
   interfaces:
   - name: userEditorInterface

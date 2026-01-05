@@ -1,5 +1,6 @@
 - name: read definitions
   idm_fact:
+    host: "idm3-bindbroker"
     interface: "{{ md_if.name }}"
     filter: "{{ md_if.filter | default(omit) }}"
   register: md_data

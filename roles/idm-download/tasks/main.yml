@@ -1,6 +1,7 @@
 ---
 - name: download mongo database
   idm_fact: 
+    host: "idm3-bindbroker"
     interface: "{{ item.1.name }}"
     filter: "{{ item.1.filter | default(omit) }}"
   loop: "{{ restore_sequence_mongodb | subelements('interfaces') }}"
@@ -14,7 +15,6 @@
 - name: transform value to jinja2 expression
   idmdownload_format:
     mongodb_data: "{{ mongo_dataset.results }}"
-    mariadb_data: "{{ mariadb_dataset.results }}"
     targets:
     - regex: "\\{SSHA\\}[0-9a-zA-Z+/=]+"
       expression: "db_password"
@@ -24,6 +24,10 @@
       expression: "dn_suffix"
     - value: "{{ domain }}"
       expression: "domain"
+    - value: "{{ credentials.ldap_config_password }}"
+      expression: "credentials.ldap_config_password"
+    - value: "{{ credentials.ldap_rootdn_password }}"
+      expression: "credentials.ldap_rootdn_password"
     - value: "{{ dn_suffix | regex_replace('^DC=([^,]*),.*$', '\\1') }}"
       expression: "dn_suffix | regex_replace('^DC=([^,]*),.*$', '\\1')"
   register: idm2_all_dataset

@@ -1,4 +1,9 @@
 ---
+- name: install python packages
+  pip:
+    name:
+      - dictdiffer
+    state: present
 - name: initialize databases
   shell: idm3ctl init
   register: init
@@ -16,7 +21,9 @@
   loop_control:
     label: "{{item.0.name}} / {{ item.1.name }}"
   until: not loaded_data.failed
-  retries: 3
-  delay: 3
-  vars:
-    ansible_python_interpreter: /root/prov/bin/python
+- name: restart BindBroker HMR
+  uri:
+    url: "http://idm3-bindbroker:8094/BindBroker/Management/restart"
+    method: GET
+    status_code: 200
+  
