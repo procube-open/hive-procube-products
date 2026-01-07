@@ -147,7 +147,7 @@ window.setTimeout(function() {
         <div id="login-column" class="col-md-6">
           <div id="login-box" class="col-md-12">
             <form id="loginForm" class="form" method="post" name="loginForm" role="form" action="${flowExecutionUrl}" onSubmit="return checkSubmit();">
-              <h3 class="text-center text-info mb-3">IAMAS Authentication</h3>
+              <h3 class="text-center text-info mb-3">Authentication</h3>
               <div class="input-group mb-3">
                 <div class="input-group-prepend">
                   <span class="input-group-text"><i class="fas fa-user"></i></span>

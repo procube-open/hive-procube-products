@@ -3,7 +3,7 @@
 CURRENT=$(cd $(dirname $0);pwd)
 USERS_SEEDS_CSV="/root/users_seeds.csv"
 USER_SEED_IDM_CSV="/root/user_seed.csv"
-IDM_CSV_DIR="/home/iamasprov/update_seedtime"
+IDM_CSV_DIR="/home/prov/update_seedtime"
 
 function logging() {
   TS=$(date '+%Y-%m-%d %H:%M:%S')
@@ -37,6 +37,6 @@ if [ $RET -ne 0 ]; then
 fi
 
 logging "Start transfer csv to idm"
-scp -o "StrictHostKeyChecking no" ${USER_SEED_IDM_CSV} iamasprov@idm:${IDM_CSV_DIR}/
+scp -o "StrictHostKeyChecking no" ${USER_SEED_IDM_CSV} prov@idm:${IDM_CSV_DIR}/
 
 logging "End users_seeds transfer"

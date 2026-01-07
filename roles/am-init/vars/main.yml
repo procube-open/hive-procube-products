@@ -129,25 +129,25 @@ am_kv_user_common:
   - key: "nsam/idp/ldap"
     value:
       app_name: idp
-      baseDN: "ou=People,{{ dn_suffix }}"
+      baseDN: "ou=Users,{{ dn_suffix }}"
       bindDN: "cn=Manager,{{ dn_suffix }}"
       bindDNCredential: "{{ credentials.ldap_rootdn_password }}"
       config_name: ldap
       connectTimeout: PT0.025S
-      dataConnectorId: ianet_idp
+      dataConnectorId: ldap_idp
       hostname: ldap
       port: 389
       subtreeSearch: false
       userFilter: (uid={user})
-  - key: "nsam/idp/dataConnector/ianet_idp"
+  - key: "nsam/idp/dataConnector/ldap_idp"
     value:
       app_name: idp
-      baseDN: "ou=People,{{ dn_suffix }}"
+      baseDN: "ou=Users,{{ dn_suffix }}"
       bindDN: "cn=Manager,{{ dn_suffix }}"
       bindDNCredential: "{{ credentials.ldap_rootdn_password }}"
       config_name: dataConnector
       connectTimeout: PT0.025S
-      id: ianet_idp
+      id: ldap_idp
       hostname: ldap
       port: 389
       subtreeSearch: false
@@ -159,7 +159,7 @@ am_kv_user_common:
       type: Simple
       attributeDefinitionId: uid
       config_name: samlAttribute
-      dependencyName: ianet_idp
+      dependencyName: ldap_idp
       saml1EncodeName: ""
       friendlyName: uid
       saml2EncodeName: uid
@@ -171,7 +171,7 @@ am_kv_user_common:
       type: Simple
       attributeDefinitionId: proselfid
       config_name: samlAttribute
-      dependencyName: ianet_idp
+      dependencyName: ldap_idp
       saml1EncodeName: ""
       friendlyName: proselfid
       saml2EncodeName: proselfid
@@ -183,28 +183,12 @@ am_kv_user_common:
       type: Simple
       attributeDefinitionId: ssouid
       config_name: samlAttribute
-      dependencyName: ianet_idp
+      dependencyName: ldap_idp
       saml1EncodeName: ""
       friendlyName: ssouid
       saml2EncodeName: ssouid
       sourceAttributeId: uid
       additionalConfig: ""
-  - key: "nsam/idp/samlAttributeFilter/idAndRole"
-    value:
-      app_name: idp
-      attributeDefinitionId:
-      - uid
-      - userType
-      config_name: samlAttributeFilter
-      policyId: idAndRole
-      additionalConfig: ""
-      restriction:
-      - https://idm.auth.iamas.ac.jp/Shibboleth.sso
-      - https://log.auth.iamas.ac.jp/Shibboleth.sso
-      - https://dnsadmin.auth.iamas.ac.jp/Shibboleth.sso
-      - https://login.auth.iamas.ac.jp/Shibboleth.sso
-      - https://zabbix.auth.iamas.ac.jp/Shibboleth.sso
-      - https://gw.auth.iamas.ac.jp/Shibboleth.sso
   - key: "nsam/idp/samlAttributeFilter/m365"
     value:
       app_name: idp
@@ -216,31 +200,6 @@ am_kv_user_common:
       additionalConfig: ""
       restriction:
       - urn:federation:MicrosoftOnline
-  - key: "nsam/idp/samlAttributeFilter/proself"
-    value:
-      app_name: idp
-      attributeDefinitionId:
-      - proselfid
-      config_name: samlAttributeFilter
-      policyId: proself
-      additionalConfig: ""
-      restriction:
-      - https://wd.iamas.ac.jp/proself
-  - key: "nsam/idp/samlAttributeFilter/moodle"
-    value:
-      app_name: idp
-      attributeDefinitionId:
-      - ssouid
-      - surName
-      - surNameEn
-      - givenName
-      - givenNameEn
-      - emailAddress
-      config_name: samlAttributeFilter
-      policyId: moodle
-      additionalConfig: ""
-      restriction:
-      - https://el.iamas.ac.jp/sp/shibboleth
   - key: "nsam/idp/relyingPartyOverrides/m365"
     value:
       app_name: idp

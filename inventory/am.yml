@@ -14,9 +14,6 @@ services:
     - "-n"
     - "-c"
     - "/etc/supervisord.conf"
-    ports:
-    - "8787:8787"
-    - "8100:8100"
     initialize_roles:
     - am-init
     labels:

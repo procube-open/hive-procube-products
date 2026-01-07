@@ -50,7 +50,7 @@ services:
 
   # Gateway Service (Apache HTTP Server)
   idm3-gateway:
-    image: docker-repository.procube.jp/idm-gateway:latest
+    image: docker-repository.procube.jp/idm-gateway:0.0.7-rc.2
     ports:
     - "10443:9443"
     initialize_roles:
@@ -58,17 +58,12 @@ services:
       # - idm-init
     environment:
       # 認証設定
-      AUTH_METHOD: ldap
+      AUTH_METHOD: saml
       AUTH_REALM: NetSoarer ID Manager V3
-      # LDAP認証設定
-      LDAP_URL: "ldap://ldap:389/{{ dn_suffix }}"
-      LDAP_UID_ATTR: uid
-      LDAP_GROUP_ATTR: gid
-      LDAP_BIND_DN: "cn=Manager,{{ dn_suffix }}"
-      LDAP_BIND_PASSWORD: "{{ credentials.ldap_rootdn_password }}"
-      LDAP_MAX_SUB_GROUP_DEPTH: "1"
-      LDAP_SUB_GROUP_ATTR: member
-      LDAP_SUB_GROUP_CLASS: groupOfNames
+      # SAML設定
+      SAML_UID_ATTR: uid
+      SAML_GROUP_ATTR: HTTP_REMOTEGROUP
+      SAML_LOGOUT_URL: https://auth.{{ domain }}/Shibboleth.sso/Logout
       # バックエンドURL設定
       WEB_BACKEND_URL: http://idm3-web:3000
       # MongoDB設定（idm3ctlコマンド用）
@@ -112,6 +107,8 @@ services:
       roles:
       - python-aptk
       - ldap
+    initialize_roles:
+      - ldap-init
     environment:
       LDAP_CONFIG_PASSWORD: "{{ credentials.ldap_config_password }}"
       LDAP_NOFILE: "1024"
