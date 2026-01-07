@@ -22,7 +22,7 @@ services:
     labels:
       published_name: auth
       webgate:
-        access_control: <Rule require="HTTP_REMOTEGROUP">IDM_ADMIN IDM_OPERATOR</Rule>
+        access_control: <Rule require="HTTP_REMOTEGROUP">IDM_ADMIN</Rule>
         proxies:
         - target_port: 8100
           target_protocol: http

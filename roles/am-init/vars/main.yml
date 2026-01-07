@@ -270,8 +270,8 @@ am_kv_user_common:
     value:
       app_name: idp
       config_name: mailConfig
-      user: "kitamura@procube.jp"
-      password: "wesficujxlsynmek"
+      user: "{{ credentials.google_mail_user }}"
+      password: "{{ credentials.google_app_password }}"
       host: "smtp.gmail.com"
       port: 587
       useSmtpAuth: true

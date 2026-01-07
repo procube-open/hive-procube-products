@@ -1,0 +1,17 @@
+#!/bin/bash
+# This script is called by certbot for DNS-01 challenge authentication
+# Environment variables set by certbot:
+# - CERTBOT_DOMAIN: The domain being authenticated
+# - CERTBOT_VALIDATION: The validation string
+
+ZONE=$(echo "$CERTBOT_DOMAIN" | sed -E 's/^[^.]*\.(.*)$/\1/')
+RECORD_NAME="_acme-challenge.${CERTBOT_DOMAIN}"
+
+# Use PowerDNS API to create TXT record
+curl -X PATCH "http://powerdns:8081/api/v1/servers/localhost/zones/${ZONE}." \
+  -H "X-API-Key: {{ hostvars['powerdns'].db_password }}" \
+  -H "Content-Type: application/json" \
+  -d "{\"rrsets\": [{\"name\": \"${RECORD_NAME}.\", \"type\": \"TXT\", \"ttl\": 60, \"changetype\": \"REPLACE\", \"records\": [{\"content\": \"\\\"${CERTBOT_VALIDATION}\\\"\", \"disabled\": false}]}]}"
+
+# Wait for DNS propagation
+sleep 30

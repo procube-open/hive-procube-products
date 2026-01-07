@@ -1,4 +1,0 @@
-acme_directory: https://acme-staging-v02.api.letsencrypt.org/directory
-# acme_directory: https://acme-v02.api.letsencrypt.org/directory
-acme_email: "{{ credentials.acme_email }}"
-pdns_api_key: "{{ db_password }}"

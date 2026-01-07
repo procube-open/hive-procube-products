@@ -7,6 +7,10 @@
 domain: "{{ hive_name }}.procube-demo.jp"
 # 委任先の FQDN は ns[0-2]-{{ domain }} とする（グルーレコードではなく親ドメインの直下レコードとする）
 
+web_vip: 192.168.0.200
+default_entity_id: "https://auth.{{ domain }}/idp/shibboleth"
+dns_mode: "global"  # global or internal
+
 amdb_name: "amdb_idp"
 
 # Secrets
@@ -21,7 +25,10 @@ ns_container_repository: "docker-repository.procube.jp"
 hive_kernel_version: "6.12.0-124.8.1.el10_1.x86_64"
 hive_drbd_download_url: "https://github.com/procube-open/drbd9-rpm/releases/download/Latests/drbd-9.2.15-v9.29.0-6.12.0-124.8.1.el10_1.x86_64.tar.gz"
 
+# LDAP ドメインコンポーネント
 dn_suffix: "DC={{ domain.split('.') | join(',DC=') }}"
+
+# MongoDB から復元するデータの定義
 restore_sequence_mongodb:
 - name: ldap_settings
   interfaces:

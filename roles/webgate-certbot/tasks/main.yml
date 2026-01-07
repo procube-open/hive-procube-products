@@ -1,0 +1,23 @@
+---
+- set_fact:
+    fqdn_list: []
+- name: get services
+  loop: "{{ groups['services'] | intersect(groups[hive_stage]) }}"
+  when: labels.webgate is defined
+  set_fact:
+    fqdn_list: "{{ fqdn_list + [(labels.published_name | default(item)) + '.' + domain] }}"
+  vars:
+    labels: "{{ hostvars[item].hive_labels | default({}) }}"
+- name: ensure certbot config directory
+  file:
+    path: /etc/letsencrypt
+    state: directory
+    mode: '0755'
+- name: ensure renewal hooks directory
+  file:
+    path: /etc/letsencrypt/renewal-hooks/deploy
+    state: directory
+    mode: '0755'
+- name: include acme
+  include_tasks:
+    file: acme.yml

@@ -15,8 +15,8 @@ services:
     - "443:443"
     - "80:80"
     initialize_roles:
-    - webgate-init
-    #- acme
+    # - webgate-init
+    - webgate-certbot
     volumes:
     - source: webgate_consul
       target: /var/consul
@@ -24,3 +24,9 @@ services:
       drbd:
         fstype: xfs
         size: 500M
+    - source: webgate_certbot
+      target: /etc/letsencrypt
+      type: volume
+      drbd:
+        fstype: xfs
+        size: 1G

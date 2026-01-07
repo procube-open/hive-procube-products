@@ -1,0 +1,33 @@
+- name: Create manual auth hook script
+  template:
+    src: manual-auth-hook.sh.j2
+    dest: /etc/letsencrypt/manual-auth-hook.sh
+    mode: '0755'
+  run_once: true
+
+- name: Create manual cleanup hook script
+  template:
+    src: manual-cleanup-hook.sh.j2
+    dest: /etc/letsencrypt/manual-cleanup-hook.sh
+    mode: '0755'
+  run_once: true
+
+- name: Request certificate with certbot using manual DNS-01 challenge
+  command: >
+    /usr/bin/certbot certonly
+    --manual
+    --preferred-challenges dns-01
+    --manual-auth-hook /etc/letsencrypt/manual-auth-hook.sh
+    --manual-cleanup-hook /etc/letsencrypt/manual-cleanup-hook.sh
+    --manual-public-ip-logging-ok
+    --email {{ acme_email }}
+    --agree-tos
+    --non-interactive
+    --domain {{ fqdn }}
+    --cert-name {{ fqdn }}
+    {{ '--staging' if staging_acme else '' }}
+  loop: "{{ fqdn_list }}"
+  loop_control:
+    loop_var: fqdn
+  register: certbot_result
+  changed_when: "'Certificate not yet due for renewal' not in certbot_result.stdout"
