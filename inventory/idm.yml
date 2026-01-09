@@ -50,7 +50,7 @@ services:
 
   # Gateway Service (Apache HTTP Server)
   idm3-gateway:
-    image: docker-repository.procube.jp/idm-gateway:0.0.7-rc.2
+    image: docker-repository.procube.jp/idm-gateway:latest
     ports:
     - "10443:9443"
     initialize_roles:
@@ -58,12 +58,18 @@ services:
       # - idm-init
     environment:
       # 認証設定
-      AUTH_METHOD: saml
+      AUTH_METHOD: basic
       AUTH_REALM: NetSoarer ID Manager V3
-      # SAML設定
-      SAML_UID_ATTR: uid
-      SAML_GROUP_ATTR: HTTP_REMOTEGROUP
-      SAML_LOGOUT_URL: https://auth.{{ domain }}/Shibboleth.sso/Logout
+      # BASIC 設定
+      BASIC_AUTH_USER: admin
+      BASIC_AUTH_PASSWORD: admin
+      # # SAML設定
+      # SAML_SP_ENTITY_ID: https://idm3.{{ domain }}/metadata
+      # SAML_IDP_ENTITY_ID: https://auth.{{ domain }}/idp/shibboleth
+      # SAML_IDP_METADATA_URL: https://auth.{{ domain }}/idp/shibboleth
+      # SAML_UID_ATTR: uid
+      # SAML_GROUP_ATTR: HTTP_REMOTEGROUP
+      # SAML_LOGOUT_URL: https://auth.{{ domain }}/Shibboleth.sso/Logout
       # バックエンドURL設定
       WEB_BACKEND_URL: http://idm3-web:3000
       # MongoDB設定（idm3ctlコマンド用）
@@ -76,31 +82,31 @@ services:
       BINDBROKER_HOST: idm3-bindbroker
       BINDBROKER_MANAGEMENT_PORT: "8094"
       BINDBROKER_HMR_RESTART_ENABLED: "true"
-    labels:
-      published_name: idm3
-      webgate:
-        proxies:
-        - target_port: 80
-          readTimeout: 7200
-          maxBodySize: 10
-          pathPattern: /
-          authentication: saml
-        - target_port: 80
-          postfix: ":chpw"
-          pathPattern: /changePassword
 
   # Web Frontend Service
   idm3-web:
     image: docker-repository.procube.jp/idm-web:latest
     environment:
-      # NEXT_PUBLIC_TRUSTED_ORIGIN: https://localhost:9443
-      NEXT_PUBLIC_TRUSTED_ORIGIN: https://super-duper-space-halibut-6j564xr5559hrg6p-10443.app.github.dev
+      NEXT_PUBLIC_ENABLE_SANDBOX_ORIGIN_CHECK: "false"
       NEXT_API_URL: http://idm3-bindbroker:8090/IDManager
       NEXT_CSV_URL: http://idm3-bindbroker:8091/IDManagerCSV
       NEXT_PDF_URL: http://idm3-tomcat:8080/PdfReport
       NEXT_CHANGEPASSWORD_URL: http://idm3-tomcat:8080/changePassword
       NEXT_ADPASSWORDSYNC_URL: http://idm3-tomcat:8080/ADPasswordSync
       NEXT_MAILCONFIRM_URL: http://idm3-tomcat:8080/MailConfirm
+    labels:
+      published_name: idm3
+      webgate:
+        proxies:
+        - target_port: 3000
+          readTimeout: 7200
+          maxBodySize: 10
+          pathPattern: /
+          authentication: saml
+        - target_port: 3000
+          postfix: ":chpw"
+          pathPattern: /changePassword
+
   ldap:
     image:
       from: procube/openldap:latest

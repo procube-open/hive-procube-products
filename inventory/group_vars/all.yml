@@ -58,14 +58,6 @@ restore_sequence_mongodb:
         "$nin":
         - LdapDBProvisioning
         - LdapSchemaProvisioning
-- name: master_tables
-  interfaces:
-  - name: LdapGenericObjectEditorIF0
-    key_property: dn
-  - name: LdapGenericObjectEditorIF1
-    key_property: dn
-  - name: LdapGenericObjectEditorIF2
-    key_property: dn
 - name: layouts
   interfaces:
   - name:  _sandboxRoles
@@ -74,6 +66,9 @@ restore_sequence_mongodb:
     key_property: name
   - name: _sandboxNavbar
     key_property: name
+- name: master_tables
+  interfaces:
+  - name: LdapGenericObjectEditorIF
 - name: objects
   interfaces:
   - name: userEditorInterface

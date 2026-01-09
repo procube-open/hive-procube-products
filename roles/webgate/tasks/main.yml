@@ -14,12 +14,12 @@
     - iproute
     - openssh-clients
     enablerepo: crb
-# - name: patch to set consistentAddress false
-#   lineinfile:
-#     dest: /etc/consul-template.d/shibboleth2.xml.tmpl
-#     regexp: '^( *checkAddress="false" )(consistentAddress="false" )?(.*)$'
-#     line: '\1consistentAddress="false" \3'
-#     backrefs: yes
+- name: patch to set consistentAddress false
+  lineinfile:
+    dest: /etc/consul-template.d/shibboleth2.xml.tmpl
+    regexp: '^( *checkAddress="false" )(consistentAddress="false" )?(.*)$'
+    line: '\1consistentAddress="false" \3'
+    backrefs: yes
 - name: put override consul.service
   copy:
     src: consul.service.d

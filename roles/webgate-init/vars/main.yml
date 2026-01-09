@@ -10,7 +10,7 @@ webgate_kv_samlsps: >-
       {%- set value = {
           "fqdn": published_name + "." + domain,
           "idpEntityId": labels.webgate.idpEntityId | default(default_entity_id),
-          "uidAttrName": "uid",
+          "uidAttrName": "HTTP_REMOTEUSER",
           "certificateFqdn": "sp-dummy." + domain
       } -%}
       {% if labels.webgate.access_control is defined -%}
@@ -99,21 +99,6 @@ webgate_kv_common:
     value:
       name: HTTP_REMOTEUSER
       source: uid
-      type: StringAttributeDecoder
-  - key: "attributes/uid"
-    value:
-      name: uid
-      source: uid
-      type: StringAttributeDecoder
-  - key: "attributes/mail"
-    value:
-      name: mail
-      source: mail
-      type: StringAttributeDecoder
-  - key: "attributes/vlan"
-    value:
-      name: vlan
-      source: vlan
       type: StringAttributeDecoder
   - key: "metadatas/idp"
     value:

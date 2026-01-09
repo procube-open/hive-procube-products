@@ -189,6 +189,31 @@ am_kv_user_common:
       saml2EncodeName: ssouid
       sourceAttributeId: uid
       additionalConfig: ""
+  - key: "nsam/idp/samlAttribute/idmRole"
+    value:
+      app_name: idp
+      type: Simple
+      attributeDefinitionId: idmRole
+      config_name: samlAttribute
+      dependencyName: ldap_idp
+      saml1EncodeName: ""
+      friendlyName: idmRole
+      saml2EncodeName: idmRole
+      sourceAttributeId: idmRole
+      additionalConfig: ""
+  - key: "nsam/idp/samlAttributeFilter/idAndRole"
+    value:
+      app_name: idp
+      attributeDefinitionId:
+      - uid
+      - idmRole
+      config_name: samlAttributeFilter
+      policyId: idAndRole
+      additionalConfig: ""
+      restriction:
+      - https://idm3.{{ domain }}/Shibboleth.sso
+      - https://pdnsadmin.{{ domain }}/Shibboleth.sso
+      - https://gw.{{ domain }}/Shibboleth.sso
   - key: "nsam/idp/samlAttributeFilter/m365"
     value:
       app_name: idp

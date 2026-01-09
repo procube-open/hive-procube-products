@@ -15,7 +15,7 @@ services:
     - "443:443"
     - "80:80"
     initialize_roles:
-    # - webgate-init
+    - webgate-init
     - webgate-certbot
     volumes:
     - source: webgate_consul
