@@ -1,0 +1,42 @@
+## Error Handling
+#if ($authenticationErrorContext)
+  <div id="loginPageErrorMessage" class="alert alert-danger" role="alert">
+    <button type="button" class="close" onClick="closeAlert()">&times;</button>
+    #if ($authenticationErrorContext.getClassifiedErrors().size() > 0)
+      #foreach ($error in $authenticationErrorContext.getClassifiedErrors())
+        <p>
+        #if ($error.getClass().getName() == 'net.shibboleth.idp.authn.AuthenticationErrorContext$AccountLockedException')
+          <span id="login-error-account-locked">#springMessageText("idp.authn.account.locked", "アカウントがロックされています")</span>
+        #elseif ($error.getClass().getName() == 'net.shibboleth.idp.authn.AuthenticationErrorContext$InvalidCredentialsException')
+          <span id="login-error-invalid-credentials">#springMessageText("idp.authn.invalid.credentials", "ユーザー名またはパスワードが正しくありません")</span>
+        #elseif ($error.getClass().getName() == 'net.shibboleth.idp.authn.AuthenticationErrorContext$ExpiredCredentialsException')
+          <span id="login-error-expired-credentials">#springMessageText("idp.authn.expired.credentials", "パスワードの有効期限が切れています")</span>
+        #else
+          <span id="login-error-unknown">#springMessageText("idp.authn.unknown.error", "認証エラーが発生しました")</span>
+        #end
+        </p>
+      #end
+    #elseif ($authenticationErrorContext.getExceptions().size() > 0)
+      #set ($ex = $authenticationErrorContext.getExceptions().get(0))
+      <p>
+      #if ($ex.getClass().getName() == 'jp.procube.security.authn.totp.api.exception.InvalidCodeException')
+        <span id="login-error-totp-invalid-code">#springMessageText("idp.authn.totp.invalid.code", "ワンタイムパスワードが正しくありません")</span>
+      #elseif ($ex.getClass().getName() == 'jp.procube.security.authn.totp.api.exception.TokenNotFoundException')
+        <span id="login-error-totp-not-found">#springMessageText("idp.authn.totp.not.found", "TOTPトークンが見つかりません")</span>
+      #else
+        <span id="login-error-general">#springMessageText("idp.authn.general.error", "認証中にエラーが発生しました: $ex.getMessage()")</span>
+      #end
+      </p>
+    #else
+      <p><span id="login-error-default">#springMessageText("idp.authn.general.error", "認証中にエラーが発生しました")</span></p>
+    #end
+  </div>
+#end
+
+## Registration error handling for TOTP
+#if ($rgstErrMessage && "$rgstErrMessage" != "")
+  <div id="rgstCodeErrorMessage" class="alert alert-danger" role="alert">
+    <button type="button" class="close" onClick="closeAlert()">&times;</button>
+    <span id="$rgstErrMessage"></span>
+  </div>
+#end

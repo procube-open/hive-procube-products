@@ -1,8 +1,15 @@
 #set ($rpContext = $profileRequestContext.getSubcontext('net.shibboleth.idp.profile.context.RelyingPartyContext'))
 #set ($userName = $authenticationContext.getSubcontext('net.shibboleth.idp.authn.context.UsernamePasswordContext', true).getUsername())
-#set ($totpUrl = $authenticationContext.getSubcontext('jp.procube.security.authn.totp.api.context.TokenUserContext').getTotpUrl())
-#set ($sharedSecret = $authenticationContext.getSubcontext('jp.procube.security.authn.totp.api.context.TokenUserContext').getSharedSecret())
-#set ($totpValidateState = $authenticationContext.getSubcontext('jp.procube.security.authn.totp.api.context.TokenUserContext').getState())
+#set ($tokenUserContext = $authenticationContext.getSubcontext('jp.procube.security.authn.totp.api.context.TokenUserContext'))
+#if( $tokenUserContext )
+  #set ($totpUrl = $tokenUserContext.getTotpUrl())
+  #set ($sharedSecret = $tokenUserContext.getSharedSecret())
+  #set ($totpValidateState = $tokenUserContext.getState())
+#else
+  #set ($totpUrl = "")
+  #set ($sharedSecret = "")
+  #set ($totpValidateState = "")
+#end
 #if( $totpValidateState && "$totpValidateState" != "" )
   #if( "$totpValidateState" == "INVALID_CODE" )
     #set ($rgstErrMessage = "totp-gauth-registration-wizard-stp3-code-invalid-message")

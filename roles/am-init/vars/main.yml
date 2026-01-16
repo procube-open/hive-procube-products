@@ -104,28 +104,28 @@ am_kv_user_common:
       failedCountLimitBySrcIPAddr: ""
       expireSeconds: ""
       htmlLocalStorage: false
-      trackSPSessions: false
+      trackSPSessions: true
       secondaryServiceIndex: false
       additionalConfig: |-
         idp.session.consistentAddress=false
         idp.authn.LDAP.useStartTLS=false
         idp.pool.LDAP.minSize=0
         nsam.authn.devicemgmt.beforehandExpiringDuration=PT0S
-#  - key: "nsam/idp/authmethod"
-#    value:
-#      app_name: idp
-#      config_name: authmethod
-#      type:
-#      - Periodic
-#      - MFA
-#      periodicSessionAttribute:
-#      - passwdChangedDatetime
-#      DBRecording: true
-#      mfaAuthmethod: PasswordTotp
-#      usePeriodic: true
-#      defaultTransition: APP
-#      selectableTransition:
-#      - APP
+  - key: "nsam/idp/authmethod"
+    value:
+      app_name: idp
+      config_name: authmethod
+      type:
+      - Periodic
+      - MFA
+      periodicSessionAttribute:
+      - passwdChangedDatetime
+      DBRecording: true
+      mfaAuthmethod: PasswordTotp
+      usePeriodic: true
+      defaultTransition: APP
+      selectableTransition:
+      - APP
   - key: "nsam/idp/ldap"
     value:
       app_name: idp

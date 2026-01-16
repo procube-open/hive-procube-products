@@ -11,7 +11,7 @@ web_vip: 192.168.0.200
 default_entity_id: "https://auth.{{ domain }}/idp/shibboleth"
 dns_mode: "global"  # global or internal
 
-amdb_name: "amdb_idp"
+amdb_name: "nsam_idp"
 
 # Secrets
 credentials: "{{ lookup('file', inventory_dir | dirname + '/secrets.yml') | from_yaml | default({}) }}"

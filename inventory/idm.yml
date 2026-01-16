@@ -47,6 +47,7 @@ services:
     environment:
       BINDBROKER_URL: http://idm3-bindbroker:8090
       JAVA_OPTS: -Xmx1024m -Xms512m
+      IDM3_ENDPOINT: http://idm3-bindbroker:8090/IDManager/
 
   # Gateway Service (Apache HTTP Server)
   idm3-gateway:

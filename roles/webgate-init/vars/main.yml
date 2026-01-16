@@ -11,7 +11,8 @@ webgate_kv_samlsps: >-
           "fqdn": published_name + "." + domain,
           "idpEntityId": labels.webgate.idpEntityId | default(default_entity_id),
           "uidAttrName": "HTTP_REMOTEUSER",
-          "certificateFqdn": "sp-dummy." + domain
+          "certificateFqdn": "sp-dummy." + domain,
+          "checkAddress": "none"
       } -%}
       {% if labels.webgate.access_control is defined -%}
         {%- set _ = value.update({"accessControl": labels.webgate.access_control}) -%}
@@ -136,12 +137,10 @@ webgate_kv_common:
                 <ArtifactResolutionService Binding="urn:oasis:names:tc:SAML:2.0:bindings:SOAP"
                     Location="https://auth.{{ domain }}/idp/profile/SAML2/SOAP/ArtifactResolution"
                     index="2"/>
-                <!--
                 <SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="https://auth.{{ domain }}/idp/profile/SAML2/Redirect/SLO"/>
                 <SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://auth.{{ domain }}/idp/profile/SAML2/POST/SLO"/>
                 <SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST-SimpleSign" Location="https://auth.{{ domain }}/idp/profile/SAML2/POST-SimpleSign/SLO"/>
                 <SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:SOAP" Location="https://auth.{{ domain }}/idp/profile/SAML2/SOAP/SLO"/>
-                -->
                 <NameIDFormat xmlns="urn:oasis:names:tc:SAML:2.0:metadata">urn:oasis:names:tc:SAML:2.0:nameid-format:transient</NameIDFormat>
                 <NameIDFormat xmlns="urn:oasis:names:tc:SAML:2.0:metadata">urn:oasis:names:tc:SAML:2.0:nameid-format:persistent</NameIDFormat>
                 <NameIDFormat xmlns="urn:oasis:names:tc:SAML:2.0:metadata">urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</NameIDFormat>

@@ -166,18 +166,19 @@
 - name: enable users_seed timer timer
   service: name=seed-regtime-export.timer enabled=yes
   when: hive_stage == 'production'
-#- name: put custom pages
-#  copy:
-#    src: "{{ item }}"
-#    dest: /opt/shibIdpConf_idp/views/userFiles/
-#    owner: jetty
-#    group: jetty
-#  with_items:
-#  - nsam.css
-#  - default-login.vm
-#  - default-totp-registering-selector.vm
-#  - default-totp-register.vm
-#  - default-totp.vm
+- name: put custom pages
+  copy:
+    src: "{{ item }}"
+    dest: /opt/shibIdpConf_idp/views/userFiles/
+    owner: jetty
+    group: jetty
+  with_items:
+  - nsam.css
+  - default-login.vm
+  - default-totp-registering-selector.vm
+  - default-totp-register.vm
+  - default-totp.vm
+  - default-login-error.vm
 - name: put custom config
   copy:
     src: "{{ item }}"

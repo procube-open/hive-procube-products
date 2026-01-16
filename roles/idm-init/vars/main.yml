@@ -139,21 +139,19 @@ phases_data:
                 patternForInput: ^[a-z0-9_-]+$
                 propagations:
                 -   targetProperty: dn
-                -   targetProperty: displayName
                 required: true
                 stringRestriction: id
                 type: string
                 unique: true
                 uniqueIgnoreCase: true
             -   allowAnotherValue: false
+                description: ユーザの姓
                 displayName: 姓
                 isArray: false
                 maxLen: 256
                 minLen: 1
                 name: sn
                 outputLdapSchema: false
-                propagations:
-                -   targetProperty: displayName
                 required: true
                 type: string
                 unique: false
@@ -166,9 +164,18 @@ phases_data:
                 minLen: 1
                 name: cn
                 outputLdapSchema: false
-                propagations:
-                -   targetProperty: displayName
                 required: true
+                type: string
+                unique: false
+                uniqueIgnoreCase: false
+            -   allowAnotherValue: false
+                description: ユーザのメールアドレス
+                displayName: メールアドレス
+                isArray: false
+                name: mailAddress
+                outputLdapSchema: false
+                required: true
+                stringRestriction: mailaddr
                 type: string
                 unique: false
                 uniqueIgnoreCase: false
@@ -192,7 +199,7 @@ phases_data:
                 -   displayName: 利用者
                     value: IDM_USER
             -   allowAnotherValue: false
-                description: "\tユーザのパスワード"
+                description: ユーザのパスワード
                 displayName: パスワード
                 encryption: ARGON2
                 isArray: false
@@ -262,9 +269,7 @@ phases_data:
             name: LdapGenericObjectEditorIF
             useAESDecryptedResponse: false
             useCustomBackendDatabase: false
-        -   ACEs:
-            -   allow: true
-            accessLevel: readWrite
+        -   accessLevel: readWrite
             className: user
             database: Sandbox
             deleteAsUpdate: false
@@ -284,19 +289,19 @@ phases_data:
             properties:
             - uid
             - userPassword
-            - email
+            - mailAddress
             - sn
             - cn
             propertyNameMapping:
             -   destinationProperty: password
                 sourceProperty: userPassword
             -   destinationProperty: mail
-                sourceProperty: email
+                sourceProperty: mailAddress
             -   destinationProperty: param1
                 sourceProperty: sn
             readOnlyProperties:
             - uid
-            - email
+            - mailAddress
             - sn
             - cn
             useAESDecryptedResponse: false
@@ -528,6 +533,10 @@ phases_data:
             -   displayName: OpenLDAPデータベース設定
                 gadgetName: _openLdapDbSettingEditor
                 type: gadget
+            -   displayName: パスワード変更
+                redirectUrl: https://idm3.{{ domain }}/changePassword/changePassword?returnURL=https://idm3.{{
+                    domain }}/
+                type: link
             name: userSidebar
     ldap_settings:
         _sandboxOpenLdapDbSetting:
@@ -623,11 +632,10 @@ phases_data:
             ou: Users
     objects:
         userEditorInterface:
-        -   accountLock: false
-            cn: Admin
+        -   cn: admin
             dn: uid=admin,OU=Users,{{ dn_suffix }}
-            email: admin@{{ domain }}
             idmRole: IDM_ADMIN
-            sn: Idm
+            mailAddress: admin@example.com
+            sn: idm
             uid: admin
-            userPassword: '{ARGON2}$argon2id$v=19$m=65536,t=3,p=4$WcxyDIzc36dhPKvgbMXBlQ$M7NhhocLaAD9nTqSg0cncNzLnnCaWuTq5MB3jMvjPc0'
+            userPassword: '{ARGON2}$argon2id$v=19$m=65536,t=3,p=4$pYsQjR2kdf456Jt6QSc2BQ$Lw17E4tNKJ6Y1wCQivfOfeLXQvBM28u/cMlZTvZuLlk'
