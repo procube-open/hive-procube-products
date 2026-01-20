@@ -1,135 +1,131 @@
-# hive-builder-template
+# hive-procube-products
 
-Github Codespaces を用いて hive-builder を利用する際のテンプレートレポジトリです。
-hive-builder 本体についての詳細な利用法については[ドキュメント](https://hive-builder.readthedocs.io/ja/latest/)を参照して下さい。
+procubeの NetSoarerシリーズ製品である**IDManager, Webgate, Access Manager**の3つを自動構築する hive-builderインベントリを提供します。
 
-# 構築手順
-以下に記す手順に従うことで Codespaces の開発コンテナに hive-builder のマザー環境を構築することができます。
+## 動作環境
 
-## レポジトリを作成する
+開発コンテナ(Github Codespaces)による動作確認を行なっています。
+その他の環境で動かす場合は、pipコマンドでhive-builderをインストールして、install-collection サブコマンドでansibleコレクションをインストールして下さい。
+```
+python -m venv hive
+source hive/bin/activate
+pip install hive-builder
 
-codespaces を起動するためのレポジトリを作成します。
-本レポジトリのトップページの右上にある **Use this template** を押して、**Create a new repository**を選択することで、レポジトリ作成ページに移動します。
+cd path/to/hive-procube-products
+hive install-collection
+```
 
-レポジトリ名などの必要な情報を入力してレポジトリを作成して下さい。
+## 前提条件
 
-## Codespaces を作成する
-作成したレポジトリのトップページから **Code** を押して、 **Codespaces** タブのプラスボタンを押すことで Codespaces が作成できます。
+### procube クライアント証明書
+procube製品を利用するためのNSSDCから発行されたクライアント証明書と秘密鍵が必要です。
 
-### devcontainer
+### AWSのアクセスキー
+デフォルトのhive.ymlの設定ではAWS上に3台のEC2インスタンスを構築します。
+EC2インスタンスを構築する権限を持ったアカウントと、そのアクセスキーが必要です。
 
-Codespaces は `.devcontainer` フォルダを参照して開発コンテナを作成します。
-開発コンテナは大まかには以下の流れに従ってビルドされます。
+### ドメイン要件
 
-1. `mcr.microsoft.com/vscode/devcontainers/python:3`をベースイメージとしてpull する
-1. 各種パッケージをインストールする
-1. python の仮想環境を`/opt/hive`に作成する
-1. 仮想環境にhive-builder をインストールする
-1. systemd でコンテナを起動する
+親ドメイン（上位DNS）において、**NSレコード**および**グルーレコード**(ネームサーバーのAレコード)の設定変更が可能なドメインが必要です。
+これらの設定によりPowerDNSへ権限委譲を行うことで、hive-builderを用いたDNSレコードの自動登録が可能になります。
 
-上記の処理に 2~3 分ほど時間がかかります。 
-また、開発コンテナ作成時に `ansible-galaxy` のパッケージインストールが行われます。
-この影響で、コンテナ作成完了後も約5分ほど hive-builder を利用できません。
+### Googleメールアカウント
+Access Managerのメール送信設定で使用するGmailのメールアドレスとアプリパスワードが必要です。
 
-## プロジェクトを編集する
-開発コンテナのワークスペースフォルダがそのまま hive-builder のプロジェクトディレクトリとなっています。
+## 構築手順
 
-また、デフォルトで `tmpl`という名前の hive 定義とサービス定義のサンプルが入っています。
-これを編集することで hive-builder を用いた構築が利用できます。
+以下に構築手順を記します。hive-builderのインストール方法とcollectionのインストール方法については前述の「動作環境」を参照して下さい。
+hive-builderの基本的な使い方については、[hive-builder公式ドキュメント](https://hive-builder.readthedocs.io/ja/latest/)を参照して下さい。
 
-以上の手順終了後はこのファイルを適宜削除/修正してREADME.mdを記述して下さい。
+### 1. hive変数の設定
+デフォルトでは stage が private になっています。本番環境に構築する場合は stage を production に変更して下さい。
+```
+hive set stage production
+```
+また、AWSのアクセスキー、シークレットキーを設定します。
+```
+hive set aws_access_key_id: YOUR_AWS_ACCESS_KEY
+hive set aws_secret_access_key YOUR_AWS_SECRET
+```
 
-# setup
-hive-builder を利用する上で利便性を向上させるためのスクリプトを`setup`ディレクトリ配下に置いています。
-それぞれ使い方について説明します。
+### 2. secrets.ymlの作成
 
-## init.py
+secrets.yml.example を参考にして secrets.yml をプロジェクトルートに作成します。
 
-hive.yml の記述、依存パッケージのインストール、hive-builderの変数設定等を補助するPythonコードです。
-最初にベースとなる項目について質問し、それを回答することで hive.ymlが上書きされます。
-プロバイダがvagrantだったときは後述する [Vagrant](#vagrantのインストール)と[Squid](#squid-のインストール)のインストールも自動で行われる他、stage変数の設定も行われます。
+| キー名 | 説明 |
+| --- | --- |
+| acme_email | Let's Encryptの証明書を取得するためのメールアドレス(任意のメールアドレス) |
+| nssdc_client_cert | NSSDCクライアント証明書 (PEM形式) |
+| nssdc_client_key | NSSDCクライアント証明書の秘密鍵 (PEM形式) |
+| saml_dummy_cert | SAML用の自己署名証明書 (PEM形式) |
+| saml_dummy_key | SAML用の自己署名証明書の秘密鍵 (PEM形式) |
+| saml_serial_number | SAML用の証明書のシリアル番号 |
+| ldap_config_password | LDAPの設定用パスワード(任意の値)|
+| idp_persistentid_salt | SAMLのPersistentID生成用のソルト(任意の値)|
+| google_mail_user | Access Managerのメール送信設定で使用するGmailのメールアドレス |
+| google_app_password | Access Managerのメール送信設定で使用するGmailのアプリパスワード |
 
+#### saml_dummy_cert と saml_dummy_key の作成方法
+以下のコマンドで自己署名証明書と秘密鍵を作成できます
+```
+openssl req -x509 -newkey rsa:2048 -keyout saml_dummy_key.pem -out saml_dummy_cert.pem -days 365 -nodes -subj "/CN=dummy"
+```
+saml_serial_number は16進数で上記証明書のシリアル番号を指定して下さい。
+```
+openssl x509 -in saml_dummy_cert.pem -noout -serial
+```
 
-## 秘密情報の共有
+### 3. inventoryの設定
+inventory/hive.yml とinventory/group_vars/all.yml を開き、デフォルトの設定で問題ないかどうかを確認して下さい。
+特に以下の設定項目については、必要に応じて変更して下さい。
+| 変数名 | 説明 | パス |
+| --- | --- | --- |
+| name | 構築するシステムの名前。hive_nameで参照されます。 | inventory/hive.yml |
+| stages.production.region | EC2インスタンスを構築するAWSリージョン | inventory/hive.yml |
+| domain | 構築するシステムで使用するドメイン名 | inventory/group_vars/all.yml |
 
-IaaSを用いて構築を行った時に生成された秘密情報を共有することができます。
-以下にその手順について記述します。
+### 4. build-infraの実行
 
-### アップロード側
+build-infra サブコマンドでAWS上にEC2インスタンスを構築します。
+```
+hive build-infra
+```
 
-hive-builder で構築を行い、その秘密情報を共有したいユーザは、`setup/encrypt_secrets.py`を実行して下さい。
+### 5. 権限委譲設定
+構築したEC2インスタンスのパブリックIPアドレスに対して、ドメインのNSレコードとAレコードを設定します。
 
-これにより、ワークスペースフォルダ配下に`secrets.gpg`が生成されます。
-これをレポジトリにアップロードして下さい。
+[inventoryの設定](#3-inventoryの設定)で指定した`domain`が procube-products.procube-demo.jp である場合の例を示します。
+対象サブドメイン(procube-products)の管理権限を本システムの3台のVMへ委譲します。親ドメイン(例: procube-demo.jp)のDNSサーバーに以下のNSレコードを追加して下さい。
 
-#### `encrypt_secrets.py` の詳細
+| レコード名 | レコードタイプ | 値 |
+| --- | --- | --- |
+| procube-products | NS | ns0-procube-products.procube-demo.jp |
+| procube-products | NS | ns1-procube-products.procube-demo.jp |
+| procube-products | NS | ns2-procube-products.procube-demo.jp |
+| ns0-procube-products | A | <EC2インスタンス1台目のパブリックIPアドレス> |
+| ns1-procube-products | A | <EC2インスタンス2台目のパブリックIPアドレス> |
+| ns2-procube-products | A | <EC2インスタンス3台目のパブリックIPアドレス> |
 
-`encrypt_secrets.py` では以下の操作を順に実行します。
+### 6. hive all の実行
 
-1. 秘密情報を`/tmp/secrets` ディレクトリ配下に集める
-1. secrets をzipで圧縮する
-1. ランダムな文字列を生成する
-1. 生成した文字列をパスワードとして、圧縮したzipファイルを GPG で暗号化する
-1. パスワードを Github Secrets の Codespaces 領域に `HBSEC_PASSPHRASE`として保存する
-1. `/tmp` 配下に置いていたディレクトリを削除する
+hive all を実行することで自動構築が開始されます。
+```
+hive all
+```
+問題なく全てのタスクが完了すれば構築完了です。
 
-### ダウンロード側
+タスク完了後もサービスの処理に時間がかかる場合があります。しばらく待ってから動作確認を行って下さい。
 
-レポジトリに secrets.gpg が存在し、これを使って秘密情報を復号したいユーザは`setup/decrypt_secrets.py`を実行して下さい。
+## 動作確認
+設定したドメイン名にブラウザでアクセスし、AccessManagerのログイン画面が表示されることを確認して下さい。
+例(domainがprocube-products.procube-demo.jp)の場合だと、以下のURLにアクセスします。
 
-これにより、ワークスペースフォルダ配下に秘密情報ファイルが配置されます。
-また、すでに同名のファイルが存在した場合は上書きの確認が行われます。
+https://idm3.procube-products.procube-demo.jp
 
-#### `decrypt_secrets.py` の詳細
+デフォルトの管理者アカウントは以下の通りです。
+| ユーザー名 | パスワード |
+| --- | --- |
+| admin | adminp@ssword |
 
-`decrypt_secrets.py` では以下の操作を順に実行します。
-
-1. `HBSEC_PASSPHRASE`環境変数を参照して`secrets.gpg`の復号を行う
-1. zipファイルが生成されるのでこれを解凍する
-1. ファイルを適切な位置にコピーする
-
-### 秘密情報の削除
-
-秘密情報の共有をやめたい場合は、レポジトリの `secrets.gpg`を削除して下さい。また、`setup/delete_hbsec_secrets.py`を実行することで`HBSEC_`という接頭辞の Github Secrets を全て削除できます。
-
-# Vagrant の利用
-
-本レポジトリを用いて Vagrant を利用する場合、Vagrant コンテナ内から外部ネットワークと Vagrant内部ネットワークには接続することができません。
-このため、外部ネットワークに接続する際は Squid などのプロキシサーバに接続し、Vagrant内部ネットワークは利用しない1台構成(number_of_hosts を1に設定する構成)にとどめて下さい。
-
-## Vagrantのインストール
-
-`setup/scripts`配下に存在する`install-vagrant.sh`を実行することで開発コンテナに Vagrant をインストールすることができます。
-
-## Squid のインストール
-
-`setup/scripts`配下に存在する`install-squid.sh`を実行することで開発コンテナに Squid をインストールすることができます。
-
-Squid の設定を変更したい場合は `setup/files`配下にある`squid.conf`を編集してから再度実行することで反映できます。
-
-# vscode によるサポート
-
-vscodeの機能を用いて hive-builder の構築のサポートを行なっています。以下に紹介していきます。
-
-## Ansible Playbook の記述
-
-`roles` ディレクトリ配下に存在するAnsible Playbook の記述をサポートする各種拡張機能が導入されています。
-
-validation チェックは ansible-lint という python パッケージにより行われており、これのコンフィグYAMLは `.vscode/configs/ansible-lint.yml` を参照しています。ansible-lintの設定例については[公式ドキュメント](https://ansible.readthedocs.io/projects/lint/configuring/#specifying-configuration-files)を参照して下さい。
-そもそも validation チェックが必要ないという場合は `.vscode/settings.json`の`ansible.validation.lint.enabled`を`false`に設定して下さい。
-
-### キーボードショートカットの追加
-
-ansible 拡張機能には自動修正機能がついていません。
-ansible-lint による自動修正機能を使いたい場合はキーボードショートカットを追加して下さい。
-
-`.vscode/keybindings-example.json`をキーボードショートカットの`keybindings.json`にコピーペーストすることで、 Playbook のyamlファイルを開いている時に`shift + alt + f`で自動修正タスクが実行されるようになります。
-
-## JSON Schema
-inventory 配下に存在するhive定義yamlや、サービス定義yamlに対して JSON Schema が適用されています。デフォルトの設定では `inventory/hive.yml` に対して hive定義yaml の JSON Schema を適用し、それ以外の `inventory` 配下に存在する `yml` ファイルに対してサービス定義yaml の JSON Schema を適用します。 
-
-## ローカルポートフォワーディング
-
-vscode を用いたローカルポートフォワーディングも可能です。
-建てたサービスコンテナにブラウザでアクセスしたい場合は`hive ssh -L {開発コンテナポート}:{リモートホスト}:{リモートポート}`でポートフォワーディングが可能です。
-ポートタブに新しくブラウザ側ポートのリンクが追加されているので、これをクリックしてアクセスすることができます。
+認証に成功するとOTPの設定画面が表示されます。OTPの設定を行い、ログインできることを確認して下さい。
+IDManager V3 の管理画面にリダイレクトされます。
