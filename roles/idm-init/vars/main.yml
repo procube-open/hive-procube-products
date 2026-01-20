@@ -269,6 +269,39 @@ phases_data:
             name: LdapGenericObjectEditorIF
             useAESDecryptedResponse: false
             useCustomBackendDatabase: false
+        -   accessLevel: full
+            className: LdapGenericObject
+            database: Sandbox
+            deleteAsUpdate: false
+            description: "LDAP汎用オブジェクトの初期設定用インタフェース\r\nLevel 毎に分割してプロビジョニングを行う\r\nLevel
+                0 のオブジェクトを更新する"
+            displayName: LDAP汎用オブジェクト編集IF0
+            filterDerivation: '{level: 0}'
+            name: LdapGenericObjectEditorIF0
+            useAESDecryptedResponse: false
+            useCustomBackendDatabase: false
+        -   accessLevel: full
+            className: LdapGenericObject
+            database: Sandbox
+            deleteAsUpdate: false
+            description: "LDAP汎用オブジェクトの初期設定用インタフェース\r\nLevel 毎に分割してプロビジョニングを行う\r\nLevel
+                1 のオブジェクトを更新する"
+            displayName: LDAP汎用オブジェクト編集IF1
+            filterDerivation: '{level: 1}'
+            name: LdapGenericObjectEditorIF1
+            useAESDecryptedResponse: false
+            useCustomBackendDatabase: false
+        -   accessLevel: full
+            className: LdapGenericObject
+            database: Sandbox
+            deleteAsUpdate: false
+            description: "LDAP汎用オブジェクトの初期設定用インタフェース\r\nLevel 毎に分割してプロビジョニングを行う\r\nLevel
+                2 のオブジェクトを更新する"
+            displayName: LDAP汎用オブジェクト編集IF2
+            filterDerivation: '{level: 2}'
+            name: LdapGenericObjectEditorIF2
+            useAESDecryptedResponse: false
+            useCustomBackendDatabase: false
         -   accessLevel: readWrite
             className: user
             database: Sandbox
@@ -348,7 +381,7 @@ phases_data:
             loginname: cn=Manager,{{ dn_suffix }}
             name: LdapGenericObjectProvisioning
             outputAll: false
-            password: '{{ credentials.ldap_rootdn_password }}'
+            password: '{{ db_password }}'
             stop: false
             type: LDAP
             withHeader: false
@@ -383,7 +416,7 @@ phases_data:
             loginname: cn=Manager,{{ dn_suffix }}
             name: LdapUserProvisioning
             outputAll: false
-            password: '{{ credentials.ldap_rootdn_password }}'
+            password: '{{ db_password }}'
             stop: false
             type: LDAP
             withHeader: false
@@ -537,6 +570,12 @@ phases_data:
                 redirectUrl: https://idm3.{{ domain }}/changePassword/changePassword?returnURL=https://idm3.{{
                     domain }}/
                 type: link
+            -   displayName: ログアウト
+                icon: M30 10 L30 15 L40 15 L40 35 L30 35 L30 40 L45 40 L45 10 Z M20
+                    18 L25 22.5 L18 22.5 L18 27.5 L25 27.5 L20 32 L5 25 Z
+                redirectUrl: https://idm3.{{ domain }}/Shibboleth.sso/Logout?return=https://auth.{{
+                    domain }}/idp/profile/Logout
+                type: link
             name: userSidebar
     ldap_settings:
         _sandboxOpenLdapDbSetting:
@@ -605,21 +644,14 @@ phases_data:
             type: OpenLDAPSchema
             withHeader: false
     master_tables:
-        LdapGenericObjectEditorIF:
+        LdapGenericObjectEditorIF0:
         -   dc: '{{ dn_suffix | regex_replace(''^DC=([^,]*),.*$'', ''\1'') }}'
             dn: '{{ dn_suffix }}'
             level: 0
             objectClass:
             - locality
             - dcObject
-        -   cn: TemplateOfUser
-            dn: cn=TemplateOfUser,ou=SystemObjects,{{ dn_suffix }}
-            level: 2
-            objectClass:
-            - user
-            - uidObject
-            sn: dummy
-            uid: TemplateOfUser
+        LdapGenericObjectEditorIF1:
         -   dn: ou=SystemObjects,{{ dn_suffix }}
             level: 1
             objectClass:
@@ -630,6 +662,15 @@ phases_data:
             objectClass:
             - organizationalUnit
             ou: Users
+        LdapGenericObjectEditorIF2:
+        -   cn: TemplateOfUser
+            dn: cn=TemplateOfUser,ou=SystemObjects,{{ dn_suffix }}
+            level: 2
+            objectClass:
+            - user
+            - uidObject
+            sn: dummy
+            uid: TemplateOfUser
     objects:
         userEditorInterface:
         -   cn: admin

@@ -1,9 +1,6 @@
 # parameters for template
 
 # サイトをインターネットに公開する際のドメイン。
-# 親ドメインから本システムのDNSサーバにサブドメイン委任されていなければならない。
-# domain: "{{ hive_name }}.unirita.co.jp"
-# domain: "{{ hive_name }}.cloudrive.tokyo"
 domain: "{{ hive_name }}.procube-demo.jp"
 # 委任先の FQDN は ns[0-2]-{{ domain }} とする（グルーレコードではなく親ドメインの直下レコードとする）
 
@@ -68,7 +65,12 @@ restore_sequence_mongodb:
     key_property: name
 - name: master_tables
   interfaces:
-  - name: LdapGenericObjectEditorIF
+  - name: LdapGenericObjectEditorIF0
+    key_property: dn
+  - name: LdapGenericObjectEditorIF1
+    key_property: dn
+  - name: LdapGenericObjectEditorIF2
+    key_property: dn
 - name: objects
   interfaces:
   - name: userEditorInterface

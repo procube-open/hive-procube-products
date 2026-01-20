@@ -26,8 +26,8 @@
       expression: "domain"
     - value: "{{ credentials.ldap_config_password }}"
       expression: "credentials.ldap_config_password"
-    - value: "{{ credentials.ldap_rootdn_password }}"
-      expression: "credentials.ldap_rootdn_password"
+    - value: "{{ db_password }}"
+      expression: "db_password"
     - value: "{{ dn_suffix | regex_replace('^DC=([^,]*),.*$', '\\1') }}"
       expression: "dn_suffix | regex_replace('^DC=([^,]*),.*$', '\\1')"
   register: idm2_all_dataset

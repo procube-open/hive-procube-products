@@ -4,11 +4,10 @@ stages:
   production:
     provider: aws
     separate_repository: False
-    # number_of_hosts: 1
     number_of_hosts: 3
     cidr: 192.168.0.0/24
     region: ap-northeast-1
-    disk_size: 40
+    disk_size: 50
     mirrored_disk_size: 20
     instance_type: t3.large
     repository_instance_type: t3.large

@@ -1,3 +1,4 @@
 staging_acme: false
+force_renewal: false
 acme_email: "{{ credentials.acme_email }}"
 pdns_api_key: "{{ db_password }}"

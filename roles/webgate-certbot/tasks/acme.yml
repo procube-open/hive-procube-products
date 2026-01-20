@@ -19,6 +19,7 @@
     --preferred-challenges dns-01
     --manual-auth-hook /etc/letsencrypt/manual-auth-hook.sh
     --manual-cleanup-hook /etc/letsencrypt/manual-cleanup-hook.sh
+    --deploy-hook /etc/letsencrypt/renewal-hooks/deploy/deploy2consul
     --manual-public-ip-logging-ok
     --email {{ acme_email }}
     --agree-tos
@@ -26,6 +27,7 @@
     --domain {{ fqdn }}
     --cert-name {{ fqdn }}
     {{ '--staging' if staging_acme else '' }}
+    {{ '--force-renewal' if force_renewal else '' }}
   loop: "{{ fqdn_list }}"
   loop_control:
     loop_var: fqdn

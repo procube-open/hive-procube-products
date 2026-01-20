@@ -27,12 +27,6 @@ services:
   # BindBroker Service
   idm3-bindbroker:
     image: docker-repository.procube.jp/idm-bindbroker:latest
-    # ports:
-    # - "8090:8090"
-    # - "8091:8091"
-    # - "8092:8092"
-    # - "8093:8093"
-    # - "8094:8094"
     environment:
       NODE_ENV: development
       IDM_DB_MONGO_HOST: idm3-mongodb
@@ -55,8 +49,8 @@ services:
     ports:
     - "10443:9443"
     initialize_roles:
-      - idm-download
-      # - idm-init
+      # - idm-download
+      - idm-init
     environment:
       # 認証設定
       AUTH_METHOD: basic
@@ -64,13 +58,6 @@ services:
       # BASIC 設定
       BASIC_AUTH_USER: admin
       BASIC_AUTH_PASSWORD: admin
-      # # SAML設定
-      # SAML_SP_ENTITY_ID: https://idm3.{{ domain }}/metadata
-      # SAML_IDP_ENTITY_ID: https://auth.{{ domain }}/idp/shibboleth
-      # SAML_IDP_METADATA_URL: https://auth.{{ domain }}/idp/shibboleth
-      # SAML_UID_ATTR: uid
-      # SAML_GROUP_ATTR: HTTP_REMOTEGROUP
-      # SAML_LOGOUT_URL: https://auth.{{ domain }}/Shibboleth.sso/Logout
       # バックエンドURL設定
       WEB_BACKEND_URL: http://idm3-web:3000
       # MongoDB設定（idm3ctlコマンド用）
@@ -79,7 +66,6 @@ services:
       MONGO_USERNAME: root
       MONGO_PASSWORD: password
       MONGO_AUTH_DB: admin
-      # BindBroker設定（idm3ctlコマンド用）
       BINDBROKER_HOST: idm3-bindbroker
       BINDBROKER_MANAGEMENT_PORT: "8094"
       BINDBROKER_HMR_RESTART_ENABLED: "true"
@@ -88,7 +74,7 @@ services:
   idm3-web:
     image: docker-repository.procube.jp/idm-web:latest
     environment:
-      NEXT_PUBLIC_ENABLE_SANDBOX_ORIGIN_CHECK: "false"
+      ENABLE_SANDBOX_ORIGIN_CHECK: "false"
       NEXT_API_URL: http://idm3-bindbroker:8090/IDManager
       NEXT_CSV_URL: http://idm3-bindbroker:8091/IDManagerCSV
       NEXT_PDF_URL: http://idm3-tomcat:8080/PdfReport
@@ -132,64 +118,3 @@ services:
       drbd:
         fstype: xfs
         size: 500M
-  # ID Manager V2 Service (Legacy)
-  # idm:
-  #   image:
-  #     from: procube/alma8-standalone-base
-  #     roles:
-  #       - hive-trust-ca
-  #       - timezone
-  #       - netsoarer-products
-  #       - idm
-  #       - hive-syslog
-  #       - prov-tools
-  #   standalone: True
-  #   ports:
-  #   - "10443:9443"
-  #   - "18090:8090"
-  #   labels:
-  #     published_name: idm
-  #     webgate:
-  #       proxies:
-  #       - target_port: 80
-  #         readTimeout: 7200
-  #         maxBodySize: 10
-  #         pathPattern: /
-  #         authentication: saml
-  #       - target_port: 80
-  #         postfix: ":chpw"
-  #         pathPattern: /changePassword
-  #   initialize_roles:
-  #     #- idm-download
-  #     - idm-init
-  #   volumes:
-  #   - source: idm_mysql
-  #     target: /var/lib/mysql
-  #     type: volume
-  #     drbd:
-  #       fstype: xfs
-  #       size: 300M
-  #   - source: idm_mongo
-  #     target: /var/lib/mongo
-  #     type: volume
-  #     drbd:
-  #       fstype: xfs
-  #       size: 10G
-  #   - source: idm_eu_app_csv
-  #     target: /var/lib/eu_app
-  #     type: volume
-  #     drbd:
-  #       fstype: xfs
-  #       size: 5G
-  #   backup_scripts:
-  #   - name: idm
-  #     container: idm
-  #     backup_command: . /etc/profile.d/java.sh; idm2ctl backup -f /root/today.tar.gz
-  #     restore_command: . /etc/profile.d/java.sh;idm2ctl restore -f /root/today.tar.gz
-  #     backup_file: /root/today.tar.gz
-  #     restore_file: /root/today.tar.gz
-  #     cleanup_days_before: 3
-  #   - name: idm_eu_app_csv
-  #     container: idm
-  #     directory: /var/lib/eu_app
-  #     cleanup_days_before: 3

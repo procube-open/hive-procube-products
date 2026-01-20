@@ -131,7 +131,7 @@ am_kv_user_common:
       app_name: idp
       baseDN: "ou=Users,{{ dn_suffix }}"
       bindDN: "cn=Manager,{{ dn_suffix }}"
-      bindDNCredential: "{{ credentials.ldap_rootdn_password }}"
+      bindDNCredential: "{{ db_password }}"
       config_name: ldap
       connectTimeout: PT0.025S
       dataConnectorId: ldap_idp
@@ -144,7 +144,7 @@ am_kv_user_common:
       app_name: idp
       baseDN: "ou=Users,{{ dn_suffix }}"
       bindDN: "cn=Manager,{{ dn_suffix }}"
-      bindDNCredential: "{{ credentials.ldap_rootdn_password }}"
+      bindDNCredential: "{{ db_password }}"
       config_name: dataConnector
       connectTimeout: PT0.025S
       id: ldap_idp
