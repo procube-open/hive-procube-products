@@ -1,6 +1,31 @@
 ---
 plugin: hive_services
 services:
+  ldap:
+    image:
+      from: procube/openldap:latest
+      roles:
+      - python-aptk
+      - ldap
+    initialize_roles:
+      - ldap-init
+    environment:
+      LDAP_CONFIG_PASSWORD: "{{ credentials.ldap_config_password }}"
+      LDAP_NOFILE: "1024"
+    volumes:
+    - source: ldap_data
+      target: /var/lib/openldap/openldap-data
+      type: volume
+      drbd:
+        fstype: xfs
+        size: 500M
+    - source: ldap_config
+      target: /etc/openldap/slapd.d
+      type: volume
+      drbd:
+        fstype: xfs
+        size: 500M
+
   # MongoDB Database
   idm3-mongodb:
     image: mongo:7.0
@@ -93,28 +118,3 @@ services:
         - target_port: 3000
           postfix: ":chpw"
           pathPattern: /changePassword
-
-  ldap:
-    image:
-      from: procube/openldap:latest
-      roles:
-      - python-aptk
-      - ldap
-    initialize_roles:
-      - ldap-init
-    environment:
-      LDAP_CONFIG_PASSWORD: "{{ credentials.ldap_config_password }}"
-      LDAP_NOFILE: "1024"
-    volumes:
-    - source: ldap_data
-      target: /var/lib/openldap/openldap-data
-      type: volume
-      drbd:
-        fstype: xfs
-        size: 500M
-    - source: ldap_config
-      target: /etc/openldap/slapd.d
-      type: volume
-      drbd:
-        fstype: xfs
-        size: 500M
