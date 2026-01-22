@@ -1,4 +1,6 @@
----
+- name: wait for idm3 services starting(1 min)
+  pause:
+    minutes: 1
 - name: install python packages
   pip:
     name:

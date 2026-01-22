@@ -250,15 +250,15 @@ am_kv_user_common:
       attributeSourceFormat:
       - urn:oasis:names:tc:SAML:2.0:nameid-format:persistent
       generatorsOrder: attributeSourcedFirst
-  - key: "nsam/idp/mailConfig"
-    value:
-      app_name: idp
-      config_name: mailConfig
-      user: "{{ credentials.google_mail_user }}"
-      password: "{{ credentials.google_app_password }}"
-      host: "smtp.gmail.com"
-      port: 587
-      useSmtpAuth: true
-      useSmtpStarttls: true
+  # - key: "nsam/idp/mailConfig"
+  #   value:
+  #     app_name: idp
+  #     config_name: mailConfig
+  #     user: "{{ credentials.google_mail_user }}"
+  #     password: "{{ credentials.google_app_password }}"
+  #     host: "smtp.gmail.com"
+  #     port: 587
+  #     useSmtpAuth: true
+  #     useSmtpStarttls: true
 
 am_user_kv: "{{ am_kv_user_common + am_kv_metadataFile }}"
