@@ -4,3 +4,8 @@
 .ansible
 gcp_credential.json
 secrets.yml
+
+saml_dummy_cert.pem
+saml_dummy_key.pem
+nssdc-client.crt
+nssdc-client.key
